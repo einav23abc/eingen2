@@ -5,13 +5,13 @@ rwildcard=$(foreach d,$(wildcard $(1:=/*)),$(call rwildcard,$d,$2) $(filter $(su
 # Configurables #
 #################
 
-TARGET_NAME = libengine.a
+TARGET_NAME = game.exe
 
 CC = gcc.exe
-CA = ar
 
 
-INCLUDE_DIR = include
+INCLUDE_ROOT_DIR = include
+ENGINE_INCLUDE_ROOT_DIR = ../engine/include
 SRCS_DIR = src
 BUILDS_DIR_NAME = build
 RELEASE_DIR_NAME = release
@@ -19,20 +19,31 @@ DEBUG_DIR_NAME = debug
 OBJS_DIR_NAME = objs
 
 
+ENGINE_RELEASE_LIBRARY_LOCATION = ../engine/build/release
+ENGINE_DEBUG_LIBRARY_LOCATION = ../engine/build/debug
+# ensures the libengine.a is linked fully
+CC_RELEASE_ENGINE_LINK_FLAGS = -Wl,--whole-archive -L"$(ENGINE_RELEASE_LIBRARY_LOCATION)" -l engine -Wl,--no-whole-archive
+CC_DEBUG_ENGINE_LINK_FLAGS = -Wl,--whole-archive -L"$(ENGINE_DEBUG_LIBRARY_LOCATION)" -l engine -Wl,--no-whole-archive
+
+LIBRARIES = SDL2main SDL2 opengl32 SDL2_image SDL2_mixer libpng16-16 Ws2_32
+CC_LINK_FLAGS = $(foreach lib,$(LIBRARIES),-l $(lib))
+
+CC_RELEASE_LINK_FLAGS = $(CC_RELEASE_ENGINE_LINK_FLAGS) $(CC_LINK_FLAGS)
+CC_DEBUG_LINK_FLAGS = $(CC_DEBUG_ENGINE_LINK_FLAGS) $(CC_LINK_FLAGS)
+
+
 # Compiler flags for dependency generation
 CC_DEPFLAGS = -MMD -MP
 
 # Find all include subdirectories
-INCLUDE_SUB_DIRS = $(sort $(foreach file,$(call rwildcard,$(INCLUDE_DIR),*.h),$(dir $(file))))
-CC_INCLUDE_DIRS_FLAGS = $(foreach dir,$(INCLUDE_SUB_DIRS),-I $(dir))
+INCLUDE_DIRS = $(sort $(foreach file,$(call rwildcard,$(INCLUDE_ROOT_DIR),*.h),$(dir $(file))))
+ENGINE_INCLUDE_DIRS = $(sort $(foreach file,$(call rwildcard,$(ENGINE_INCLUDE_ROOT_DIR),*.h),$(dir $(file))))
+CC_INCLUDE_DIRS_FLAGS = $(foreach dir,$(INCLUDE_DIRS) $(ENGINE_INCLUDE_DIRS),-I $(dir))
 
 CC_FLAGS = $(CC_INCLUDE_DIRS_FLAGS) $(CC_DEPFLAGS)
 
 CC_RELEASE_FLAGS = $(CC_FLAGS) -O3 -D RELEASE
 CC_DEBUG_FLAGS = $(CC_FLAGS) -Wall -Werror -Wextra -g -D DEBUG
-
-
-CA_FLAGS = -rcs
 
 
 #############
@@ -93,9 +104,9 @@ debug_dirs: $(BUILDS_DIR)
 release: release_dirs $(RELEASE_TARGET)
 
 $(RELEASE_TARGET): $(RELEASE_OBJS)
-	$(CA) $(CA_FLAGS) $@ $^
+	$(CC) $(CC_RELEASE_FLAGS) $(CC_RELEASE_LINK_FLAGS) $^ -o $@
 
-$(RELEASE_OBJS_DIR)/%.o: $(SRCS_DIR)/%.c $(INCLUDE_DIR)/%.h release_dirs
+$(RELEASE_OBJS_DIR)/%.o: $(SRCS_DIR)/%.c $(INCLUDE_ROOT_DIR)/%.h release_dirs
 	$(CC) $(CC_RELEASE_FLAGS) $< -c -o $@
 
 
@@ -103,9 +114,9 @@ $(RELEASE_OBJS_DIR)/%.o: $(SRCS_DIR)/%.c $(INCLUDE_DIR)/%.h release_dirs
 debug: debug_dirs $(DEBUG_TARGET)
 
 $(DEBUG_TARGET): $(DEBUG_OBJS)
-	$(CA) $(CA_FLAGS) $@ $^
+	$(CC) $(CC_DEBUG_FLAGS) $(CC_DEBUG_LINK_FLAGS) $^ -o $@
 
-$(DEBUG_OBJS_DIR)/%.o: $(SRCS_DIR)/%.c $(INCLUDE_DIR)/%.h debug_dirs
+$(DEBUG_OBJS_DIR)/%.o: $(SRCS_DIR)/%.c $(INCLUDE_ROOT_DIR)/%.h debug_dirs
 	$(CC) $(CC_DEBUG_FLAGS) $< -c -o $@
 
 
