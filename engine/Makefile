@@ -22,7 +22,6 @@ CC_DEPFLAGS = -MMD -MP
 
 INCLUDE_DIRS :=
 INCLUDE_DIRS += include
-INCLUDE_DIRS += include/glad
 
 CC_INCLUDE_DIRS_FLAGS = $(foreach dir,$(INCLUDE_DIRS),-I $(dir))
 
