@@ -1,28 +1,30 @@
 #include "engine.h"
 
-__attribute__((weak)) uint32_t init();
-__attribute__((weak)) void update();
-__attribute__((weak)) void render();
-__attribute__((weak)) void handle_event(const SDL_Event event);
-__attribute__((weak)) void clean();
+__attribute__((weak)) err_t init();
+__attribute__((weak)) err_t update();
+__attribute__((weak)) err_t render();
+__attribute__((weak)) err_t handle_event(const SDL_Event event);
+__attribute__((weak)) err_t clean();
 
-static SDL_Event event;
+static SDL_Event event = {0};
 
-static uint8_t keys[SDL_NUM_SCANCODES]; // ticks since key pressed; 0 if released
+static uint8_t keys[SDL_NUM_SCANCODES] = {0}; // ticks since key pressed; 0 if released
 
-static uint8_t is_running;
+static uint8_t is_running = 0;
 
-static SDL_GLContext context;
+static SDL_GLContext context = NULL;
 
-static SDL_Window* window;
-static int32_t window_width;
-static int32_t window_height;
-static int32_t window_drawable_width;
-static int32_t window_drawable_height;
+static SDL_Window* window = NULL;
+static int32_t window_width = 0;
+static int32_t window_height = 0;
+static int32_t window_drawable_width = 0;
+static int32_t window_drawable_height = 0;
 
-static void engine_clean() {
+static err_t engine_clean() {
+    err_t err = NO_ERROR;
+
     if (clean != NULL) {
-        clean();
+        RETHROW_IF_ERROR(clean());
     }
     
     SDL_GL_DeleteContext(context);
@@ -32,43 +34,28 @@ static void engine_clean() {
 
     // TODO: on 'release', this function does not return!
     SDL_Quit();
+
+cleanup:
+    return err;
 }
 
-static uint32_t backend_init() {
+static err_t backend_init() {
+    err_t err = NO_ERROR;
+
+    CHECK(window == NULL);
+    CHECK(context == NULL);
+
     // init sdl
-    if (SDL_Init(SDL_INIT_EVERYTHING) != 0) {
-        DEBUG_PRINT("Failed to initialize SDL\n");
-        return 1;
-    }
+    CHECK(SDL_Init(SDL_INIT_EVERYTHING) == 0);
 
     // load default opengl dynamic library
-    if (SDL_GL_LoadLibrary(NULL) != 0) {
-        DEBUG_PRINT("Failed to dynamically load an OpenGL library\n");
-        SDL_Quit();
-        return 1;
-    }
+    CHECK(SDL_GL_LoadLibrary(NULL) == 0);
 
     // set context attributes - OpenGL 4.5 context (should be core)
-    if(SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3) != 0) {
-        DEBUG_PRINT("error\n");
-        SDL_Quit();
-        return 1;
-    }
-    if(SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 3) != 0) {
-        DEBUG_PRINT("error\n");
-        SDL_Quit();
-        return 1;
-    }
-    if(SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE) != 0) {
-        DEBUG_PRINT("error\n");
-        SDL_Quit();
-        return 1;
-    }
-    if(SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1) != 0) {
-        DEBUG_PRINT("error\n");
-        SDL_Quit();
-        return 1;
-    }
+    CHECK(SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3) == 0);
+    CHECK(SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 3) == 0);
+    CHECK(SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE) == 0);
+    CHECK(SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1) == 0);
 
     // create window
     window = SDL_CreateWindow(
@@ -79,29 +66,14 @@ static uint32_t backend_init() {
         300, // WINDOW_START_HEIGHT,
         SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE
     );
-    if (window == NULL) {
-        SDL_Quit();
-        DEBUG_PRINT("Failed to create window\n");
-        return 1;
-    }
+    CHECK(window != NULL);
 
     // init rendering context
     context = SDL_GL_CreateContext(window);
-    if (context == NULL) {
-        DEBUG_PRINT("Failed to create GL context\n");
-        SDL_DestroyWindow(window);
-        SDL_Quit();
-        return 1;
-    }
+    CHECK(context != NULL);
 
     // make context current (should be current anyway)
-    if (SDL_GL_MakeCurrent(window, context) != 0) {
-        DEBUG_PRINT("Failed to make context current\n");
-        SDL_GL_DeleteContext(context);
-        SDL_DestroyWindow(window);
-        SDL_Quit();
-        return 1;
-    }
+    CHECK(SDL_GL_MakeCurrent(window, context) == 0);
 
     // // use VSYNC
     // if (SDL_GL_SetSwapInterval(1) != 0) {
@@ -109,47 +81,48 @@ static uint32_t backend_init() {
     // }
 
     // retrieve GL functions
-    if (gladLoadGLLoader(SDL_GL_GetProcAddress) == 0) {
-        DEBUG_PRINT("Failed to retrieve GL functions\n");
-        SDL_GL_DeleteContext(context);
-        SDL_DestroyWindow(window);
-        SDL_Quit();
-        return 1;
-    }
+    CHECK(gladLoadGLLoader(SDL_GL_GetProcAddress) != 0);
     
     // Check OpenGL properties
     DEBUG_PRINT("Vendor:   %s\n", glGetString(GL_VENDOR));
     DEBUG_PRINT("Renderer: %s\n", glGetString(GL_RENDERER));
     DEBUG_PRINT("Version:  %s\n", glGetString(GL_VERSION));
 
-    return 0;
+cleanup:
+    if (IS_ERROR(err)) {
+        if (context != NULL) {
+            SDL_GL_DeleteContext(context);
+            context = NULL;
+        }
+        if (window != NULL) {
+            SDL_DestroyWindow(window);
+            window = NULL;
+        }
+        SDL_Quit();
+    }
+
+    return err;
 }
 
-static uint32_t engine_init() {
-    uint32_t game_init_result = 0;
+static err_t engine_init() {
+    err_t err = NO_ERROR;
     
-    if (backend_init() != 0) {
-        DEBUG_PRINT("Failed to init backend\n");
-        return 1;
-    }
+    RETHROW_IF_ERROR(backend_init());
     
     // get window sizes
     SDL_GetWindowSize(window, &window_width, &window_height);
     SDL_GL_GetDrawableSize(window, &window_drawable_width, &window_drawable_height);
 
     if (init != NULL) {
-        game_init_result = init();
-        if (game_init_result != 0) {
-            DEBUG_PRINT("init() failed with %u\n", game_init_result);
-            engine_clean();
-            return game_init_result;
-        }
+        RETHROW_IF_ERROR(init());
     }
 
-    return 0;
+cleanup:
+    return err;
 }
 
-static void engine_handle_event() {
+static err_t engine_handle_event() {
+    err_t err = NO_ERROR;
     SDL_Scancode scancode = SDL_SCANCODE_UNKNOWN;
 
     switch(event.type) {
@@ -178,15 +151,18 @@ static void engine_handle_event() {
     }
     
     if (handle_event != NULL) {
-        handle_event(event);
+        RETHROW_IF_ERROR(handle_event(event));
     }
-    return;
+
+cleanup:
+    return err;
 }
 
-static void engine_update() {
-    //
+static err_t engine_update() {
+    err_t err = NO_ERROR;
+
     if (update != NULL) {
-        update();
+        RETHROW_IF_ERROR(update());
     }
 
     // keys - count ticks since press
@@ -197,9 +173,14 @@ static void engine_update() {
             if (keys[i] == 0) keys[i]--;
         }
     }
+
+cleanup:
+    return err;
 }
 
-static void engine_render() {
+static err_t engine_render() {
+    err_t err = NO_ERROR;
+
     // clear window
     // glClearColor(BACKGROUND_COLOR_R, BACKGROUND_COLOR_G, BACKGROUND_COLOR_B, 1.0);
     glClearColor(1.0, 0, 0, 1.0);
@@ -214,16 +195,21 @@ static void engine_render() {
     glCullFace(GL_BACK);
 
     if (render != NULL) {
-        render();
+        RETHROW_IF_ERROR(render());
     }
 
     // show drawn image - swap the buffers
     SDL_GL_SwapWindow(window);
     // wait until the buffers have been swaped
     glFinish();
+
+cleanup:
+    return err;
 }
 
 int32_t main(int32_t argc, char** argv) {
+    err_t err = NO_ERROR;
+
     UNUSED(argc);
     UNUSED(argv);
 
@@ -239,24 +225,25 @@ int32_t main(int32_t argc, char** argv) {
     if (clean == NULL) DEBUG_PRINT("clean() does not exist\n");
 
     DEBUG_PRINT("initializing engine\n");
-    uint32_t init_result = engine_init();
-    if (init_result != 0) exit(init_result);
+    RETHROW_IF_ERROR(engine_init());
 
     is_running = 1;
     while(is_running){
         while (SDL_PollEvent(&event)) {
-            engine_handle_event();
+            RETHROW_IF_ERROR(engine_handle_event());
         }
         
-        engine_update();
-        engine_render();
+        RETHROW_IF_ERROR(engine_update());
+        RETHROW_IF_ERROR(engine_render());
     }
     
     DEBUG_PRINT("engine_clean()\n");
-    engine_clean();
+    
+cleanup:
+    RETHROW_NO_GOTO_IF_ERROR(engine_clean());
 
-    DEBUG_PRINT("ended sucessfully\n");
-    exit(0);
+    DEBUG_PRINT("exiting with err_val %u\n", err);
+    return IS_ERROR(err);
 }
 
 // overload for `main`

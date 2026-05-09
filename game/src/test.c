@@ -1,6 +1,7 @@
 #include <stdint.h>
 #include <stdio.h>
+#include "codeflow.h"
 
-uint32_t init() {
-    return 0;
+err_t init() {
+    return NO_ERROR;
 }
