@@ -37,6 +37,7 @@ int32_t main(int32_t argc, char** argv) {
     // FreeConsole();
     // #endif
 
+    DEBUG_PRINT("initializing engine\n");
     uint32_t init_result = engine_init();
     if (init_result != 0) exit(init_result);
 
@@ -50,47 +51,45 @@ int32_t main(int32_t argc, char** argv) {
         engine_render();
     }
     
+    DEBUG_PRINT("engine_clean()\n");
     engine_clean();
 
-    #ifdef DEBUG
-    printf("ended sucessfully");
-    #endif
-
+    DEBUG_PRINT("ended sucessfully\n");
     exit(0);
 }
 
 uint32_t backend_init() {
     // init sdl
     if (SDL_Init(SDL_INIT_EVERYTHING) != 0) {
-        printf("Failed to initialize SDL\n");
+        DEBUG_PRINT("Failed to initialize SDL\n");
         return 1;
     }
 
     // load default opengl dynamic library
     if (SDL_GL_LoadLibrary(NULL) != 0) {
-        printf("Failed to dynamically load an OpenGL library\n");
+        DEBUG_PRINT("Failed to dynamically load an OpenGL library\n");
         SDL_Quit();
         return 1;
     }
 
     // set context attributes - OpenGL 4.5 context (should be core)
     if(SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3) != 0) {
-        printf("error\n");
+        DEBUG_PRINT("error\n");
         SDL_Quit();
         return 1;
     }
     if(SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 3) != 0) {
-        printf("error\n");
+        DEBUG_PRINT("error\n");
         SDL_Quit();
         return 1;
     }
     if(SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE) != 0) {
-        printf("error\n");
+        DEBUG_PRINT("error\n");
         SDL_Quit();
         return 1;
     }
     if(SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1) != 0) {
-        printf("error\n");
+        DEBUG_PRINT("error\n");
         SDL_Quit();
         return 1;
     }
@@ -106,14 +105,14 @@ uint32_t backend_init() {
     );
     if (window == NULL) {
         SDL_Quit();
-        printf("Failed to create window\n");
+        DEBUG_PRINT("Failed to create window\n");
         return 1;
     }
 
     // init rendering context
     context = SDL_GL_CreateContext(window);
     if (context == NULL) {
-        printf("Failed to create GL context\n");
+        DEBUG_PRINT("Failed to create GL context\n");
         SDL_DestroyWindow(window);
         SDL_Quit();
         return 1;
@@ -121,7 +120,7 @@ uint32_t backend_init() {
 
     // make context current (should be current anyway)
     if (SDL_GL_MakeCurrent(window, context) != 0) {
-        printf("Failed to make context current\n");
+        DEBUG_PRINT("Failed to make context current\n");
         SDL_GL_DeleteContext(context);
         SDL_DestroyWindow(window);
         SDL_Quit();
@@ -130,31 +129,29 @@ uint32_t backend_init() {
 
     // // use VSYNC
     // if (SDL_GL_SetSwapInterval(1) != 0) {
-    //     printf("failed to enable Vsync\n");
+    //     DEBUG_PRINT("failed to enable Vsync\n");
     // }
 
     // retrieve GL functions
     if (gladLoadGLLoader(SDL_GL_GetProcAddress) == 0) {
-        printf("Failed to retrieve GL functions\n");
+        DEBUG_PRINT("Failed to retrieve GL functions\n");
         SDL_GL_DeleteContext(context);
         SDL_DestroyWindow(window);
         SDL_Quit();
         return 1;
     }
     
-    #ifdef DEBUG
     // Check OpenGL properties
-    printf("Vendor:   %s\n", glGetString(GL_VENDOR));
-    printf("Renderer: %s\n", glGetString(GL_RENDERER));
-    printf("Version:  %s\n", glGetString(GL_VERSION));
-    #endif
+    DEBUG_PRINT("Vendor:   %s\n", glGetString(GL_VENDOR));
+    DEBUG_PRINT("Renderer: %s\n", glGetString(GL_RENDERER));
+    DEBUG_PRINT("Version:  %s\n", glGetString(GL_VERSION));
 
     return 0;
 }
 
 uint32_t engine_init() {
     if (backend_init() != 0) {
-        printf("Failed to init backend\n");
+        DEBUG_PRINT("Failed to init backend\n");
         return 1;
     }
     
@@ -229,13 +226,9 @@ void engine_render() {
 
 void engine_clean() {
     SDL_GL_DeleteContext(context);
-    #ifdef DEBUG
-    printf("deleted context successfully\n");
-    #endif
+    DEBUG_PRINT("deleted context successfully\n");
     SDL_DestroyWindow(window);
-    #ifdef DEBUG
-    printf("destroyed window successfully\n");
-    #endif
+    DEBUG_PRINT("destroyed window successfully\n");
 
     // TODO: on 'release', this function does not return!
     SDL_Quit();
