@@ -50,7 +50,7 @@ DEBUG_TARGET = $(DEBUG_DIR)/$(TARGET_NAME)
 
 
 SRCS :=
-SRCS += src/main.c
+SRCS += src/engine.c
 SRCS += src/glad/glad.c
 
 OBJS = $(patsubst $(SRCS_DIR)/%.c,%.o,$(SRCS))

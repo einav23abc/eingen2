@@ -1,9 +1,9 @@
-#include "main.h"
+#include "engine.h"
 
 __attribute__((weak)) uint32_t init();
 __attribute__((weak)) void update();
 __attribute__((weak)) void render();
-__attribute__((weak)) void handle_event(SDL_Event event);
+__attribute__((weak)) void handle_event(const SDL_Event event);
 __attribute__((weak)) void clean();
 
 static SDL_Event event;
