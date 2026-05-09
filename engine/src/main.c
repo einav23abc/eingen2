@@ -1,7 +1,7 @@
 #include "main.h"
 
 
-const SDL_Event event;
+static SDL_Event event;
 
 const float TARGET_FRAME_DELAY;
 
@@ -9,7 +9,7 @@ uint8_t keys[SDL_NUM_SCANCODES]; // ticks since key pressed; 0 if released
 
 uint8_t running;
 
-const SDL_GLContext context;
+static SDL_GLContext context;
 
 SDL_Window* window;
 int32_t window_width;
@@ -42,7 +42,9 @@ int32_t main(int32_t argc, char** argv) {
 
     running = 1;
     while(running){
-        while (SDL_PollEvent((SDL_Event*)&event)) engine_handle_event();
+        while (SDL_PollEvent(&event)) {
+            engine_handle_event();
+        }
         
         engine_update();
         engine_render();
@@ -72,12 +74,12 @@ uint32_t backend_init() {
     }
 
     // set context attributes - OpenGL 4.5 context (should be core)
-    if(SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 4) != 0) {
+    if(SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3) != 0) {
         printf("error\n");
         SDL_Quit();
         return 1;
     }
-    if(SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 5) != 0) {
+    if(SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 3) != 0) {
         printf("error\n");
         SDL_Quit();
         return 1;
@@ -96,10 +98,10 @@ uint32_t backend_init() {
     // create window
     window = SDL_CreateWindow(
         "WINDOW_TITLE", // WINDOW_TITLE,
-        0, // WINDOW_START_X,
-        0, // WINDOW_START_Y,
-        100, // WINDOW_START_WIDTH,
-        100, // WINDOW_START_HEIGHT,
+        100, // WINDOW_START_X,
+        100, // WINDOW_START_Y,
+        400, // WINDOW_START_WIDTH,
+        300, // WINDOW_START_HEIGHT,
         SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE
     );
     if (window == NULL) {
@@ -109,7 +111,7 @@ uint32_t backend_init() {
     }
 
     // init rendering context
-    *((SDL_GLContext*)&context) = SDL_GL_CreateContext(window);
+    context = SDL_GL_CreateContext(window);
     if (context == NULL) {
         printf("Failed to create GL context\n");
         SDL_DestroyWindow(window);
