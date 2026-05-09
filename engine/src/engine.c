@@ -35,10 +35,10 @@ int32_t main(int32_t argc, char** argv) {
     UNUSED(argc);
     UNUSED(argv);
 
-    // #ifndef DEBUG
-    // // hide console
-    // FreeConsole();
-    // #endif
+    #ifndef DEBUG
+    // hide console
+    FreeConsole();
+    #endif
 
     if (init == NULL) DEBUG_PRINT("init() does not exist\n");
     if (render == NULL) DEBUG_PRINT("render() does not exist\n");
