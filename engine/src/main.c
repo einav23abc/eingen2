@@ -1,5 +1,10 @@
 #include "main.h"
 
+__attribute__((weak)) uint32_t init();
+__attribute__((weak)) void update();
+__attribute__((weak)) void render();
+__attribute__((weak)) void handle_event(SDL_Event event);
+__attribute__((weak)) void clean();
 
 static SDL_Event event;
 
@@ -36,6 +41,12 @@ int32_t main(int32_t argc, char** argv) {
     // // hide console
     // FreeConsole();
     // #endif
+
+    if (init == NULL) DEBUG_PRINT("init() does not exist\n");
+    if (render == NULL) DEBUG_PRINT("render() does not exist\n");
+    if (update == NULL) DEBUG_PRINT("update() does not exist\n");
+    if (handle_event == NULL) DEBUG_PRINT("handle_event() does not exist\n");
+    if (clean == NULL) DEBUG_PRINT("clean() does not exist\n");
 
     DEBUG_PRINT("initializing engine\n");
     uint32_t init_result = engine_init();
@@ -150,6 +161,8 @@ uint32_t backend_init() {
 }
 
 uint32_t engine_init() {
+    uint32_t game_init_result = 0;
+    
     if (backend_init() != 0) {
         DEBUG_PRINT("Failed to init backend\n");
         return 1;
@@ -158,6 +171,15 @@ uint32_t engine_init() {
     // get window sizes
     SDL_GetWindowSize(window, &window_width, &window_height);
     SDL_GL_GetDrawableSize(window, &window_drawable_width, &window_drawable_height);
+
+    if (init != NULL) {
+        game_init_result = init();
+        if (game_init_result != 0) {
+            DEBUG_PRINT("init() failed with %u\n", game_init_result);
+            engine_clean();
+            return game_init_result;
+        }
+    }
 
     return 0;
 }
@@ -190,10 +212,18 @@ void engine_handle_event() {
             break;
     }
     
+    if (handle_event != NULL) {
+        handle_event(event);
+    }
     return;
 }
 
 void engine_update() {
+    //
+    if (update != NULL) {
+        update();
+    }
+
     // keys - count ticks since press
     for (int32_t i = 0; i < SDL_NUM_SCANCODES; i++) {
         if (keys[i]) {
@@ -218,6 +248,10 @@ void engine_render() {
     glEnable(GL_CULL_FACE);
     glCullFace(GL_BACK);
 
+    if (render != NULL) {
+        render();
+    }
+
     // show drawn image - swap the buffers
     SDL_GL_SwapWindow(window);
     // wait until the buffers have been swaped
@@ -225,6 +259,10 @@ void engine_render() {
 }
 
 void engine_clean() {
+    if (clean != NULL) {
+        clean();
+    }
+    
     SDL_GL_DeleteContext(context);
     DEBUG_PRINT("deleted context successfully\n");
     SDL_DestroyWindow(window);
