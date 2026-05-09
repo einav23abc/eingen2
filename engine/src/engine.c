@@ -8,19 +8,17 @@ __attribute__((weak)) void clean();
 
 static SDL_Event event;
 
-const float TARGET_FRAME_DELAY;
+static uint8_t keys[SDL_NUM_SCANCODES]; // ticks since key pressed; 0 if released
 
-uint8_t keys[SDL_NUM_SCANCODES]; // ticks since key pressed; 0 if released
-
-uint8_t running;
+static uint8_t is_running;
 
 static SDL_GLContext context;
 
-SDL_Window* window;
-int32_t window_width;
-int32_t window_height;
-int32_t window_drawable_width;
-int32_t window_drawable_height;
+static SDL_Window* window;
+static int32_t window_width;
+static int32_t window_height;
+static int32_t window_drawable_width;
+static int32_t window_drawable_height;
 
 
 // overload for `main`
@@ -52,8 +50,8 @@ int32_t main(int32_t argc, char** argv) {
     uint32_t init_result = engine_init();
     if (init_result != 0) exit(init_result);
 
-    running = 1;
-    while(running){
+    is_running = 1;
+    while(is_running){
         while (SDL_PollEvent(&event)) {
             engine_handle_event();
         }
@@ -185,11 +183,11 @@ uint32_t engine_init() {
 }
 
 void engine_handle_event() {
-    SDL_Scancode scancode;
+    SDL_Scancode scancode = SDL_SCANCODE_UNKNOWN;
 
     switch(event.type) {
         case SDL_QUIT:
-            running = 0;
+            is_running = 0;
             break;
         
         case SDL_KEYDOWN:
