@@ -1,0 +1,4 @@
+[submodule "engine/externals/SDL2"]
+	path = engine/externals/SDL2
+	url = git@github.com:libsdl-org/SDL.git
+	branch = release-2.32.x
