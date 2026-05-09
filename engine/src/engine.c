@@ -20,54 +20,21 @@ static int32_t window_height;
 static int32_t window_drawable_width;
 static int32_t window_drawable_height;
 
-
-// overload for `main`
-int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow) {
-    UNUSED(hInstance);
-    UNUSED(hPrevInstance);
-    UNUSED(lpCmdLine);
-    UNUSED(nCmdShow);
-
-    return main(0, NULL);
-}
-
-int32_t main(int32_t argc, char** argv) {
-    UNUSED(argc);
-    UNUSED(argv);
-
-    #ifndef DEBUG
-    // hide console
-    FreeConsole();
-    #endif
-
-    if (init == NULL) DEBUG_PRINT("init() does not exist\n");
-    if (render == NULL) DEBUG_PRINT("render() does not exist\n");
-    if (update == NULL) DEBUG_PRINT("update() does not exist\n");
-    if (handle_event == NULL) DEBUG_PRINT("handle_event() does not exist\n");
-    if (clean == NULL) DEBUG_PRINT("clean() does not exist\n");
-
-    DEBUG_PRINT("initializing engine\n");
-    uint32_t init_result = engine_init();
-    if (init_result != 0) exit(init_result);
-
-    is_running = 1;
-    while(is_running){
-        while (SDL_PollEvent(&event)) {
-            engine_handle_event();
-        }
-        
-        engine_update();
-        engine_render();
+static void engine_clean() {
+    if (clean != NULL) {
+        clean();
     }
     
-    DEBUG_PRINT("engine_clean()\n");
-    engine_clean();
+    SDL_GL_DeleteContext(context);
+    DEBUG_PRINT("deleted context successfully\n");
+    SDL_DestroyWindow(window);
+    DEBUG_PRINT("destroyed window successfully\n");
 
-    DEBUG_PRINT("ended sucessfully\n");
-    exit(0);
+    // TODO: on 'release', this function does not return!
+    SDL_Quit();
 }
 
-uint32_t backend_init() {
+static uint32_t backend_init() {
     // init sdl
     if (SDL_Init(SDL_INIT_EVERYTHING) != 0) {
         DEBUG_PRINT("Failed to initialize SDL\n");
@@ -158,7 +125,7 @@ uint32_t backend_init() {
     return 0;
 }
 
-uint32_t engine_init() {
+static uint32_t engine_init() {
     uint32_t game_init_result = 0;
     
     if (backend_init() != 0) {
@@ -182,7 +149,7 @@ uint32_t engine_init() {
     return 0;
 }
 
-void engine_handle_event() {
+static void engine_handle_event() {
     SDL_Scancode scancode = SDL_SCANCODE_UNKNOWN;
 
     switch(event.type) {
@@ -216,7 +183,7 @@ void engine_handle_event() {
     return;
 }
 
-void engine_update() {
+static void engine_update() {
     //
     if (update != NULL) {
         update();
@@ -232,7 +199,7 @@ void engine_update() {
     }
 }
 
-void engine_render() {
+static void engine_render() {
     // clear window
     // glClearColor(BACKGROUND_COLOR_R, BACKGROUND_COLOR_G, BACKGROUND_COLOR_B, 1.0);
     glClearColor(1.0, 0, 0, 1.0);
@@ -256,16 +223,48 @@ void engine_render() {
     glFinish();
 }
 
-void engine_clean() {
-    if (clean != NULL) {
-        clean();
+int32_t main(int32_t argc, char** argv) {
+    UNUSED(argc);
+    UNUSED(argv);
+
+    #ifndef DEBUG
+    // hide console
+    FreeConsole();
+    #endif
+
+    if (init == NULL) DEBUG_PRINT("init() does not exist\n");
+    if (render == NULL) DEBUG_PRINT("render() does not exist\n");
+    if (update == NULL) DEBUG_PRINT("update() does not exist\n");
+    if (handle_event == NULL) DEBUG_PRINT("handle_event() does not exist\n");
+    if (clean == NULL) DEBUG_PRINT("clean() does not exist\n");
+
+    DEBUG_PRINT("initializing engine\n");
+    uint32_t init_result = engine_init();
+    if (init_result != 0) exit(init_result);
+
+    is_running = 1;
+    while(is_running){
+        while (SDL_PollEvent(&event)) {
+            engine_handle_event();
+        }
+        
+        engine_update();
+        engine_render();
     }
     
-    SDL_GL_DeleteContext(context);
-    DEBUG_PRINT("deleted context successfully\n");
-    SDL_DestroyWindow(window);
-    DEBUG_PRINT("destroyed window successfully\n");
+    DEBUG_PRINT("engine_clean()\n");
+    engine_clean();
 
-    // TODO: on 'release', this function does not return!
-    SDL_Quit();
+    DEBUG_PRINT("ended sucessfully\n");
+    exit(0);
+}
+
+// overload for `main`
+int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow) {
+    UNUSED(hInstance);
+    UNUSED(hPrevInstance);
+    UNUSED(lpCmdLine);
+    UNUSED(nCmdShow);
+
+    return main(0, NULL);
 }
