@@ -146,4 +146,5 @@ clean:
 	rm -fr $(BUILDS_DIR)
 	rm -fr $(RELEASE_EXPORT_DIR)
 	rm -fr $(DEBUG_EXPORT_DIR)
+	rm -fr $(EXPORT_DIR_NAME)
 

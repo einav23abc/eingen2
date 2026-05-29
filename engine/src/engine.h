@@ -1,5 +1,5 @@
-#ifndef __MAIN_H__
-#define __MAIN_H__
+#ifndef __ENGINE_H__
+#define __ENGINE_H__
 
 #include <SDL2/SDL.h>
 #include "glad/glad.h"
@@ -14,4 +14,4 @@
 #include "macros.h"
 #include "codeflow.h"
 
-#endif /* __MAIN_H__ */
+#endif /* __ENGINE_H__ */

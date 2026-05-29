@@ -84,6 +84,7 @@ static err_t backend_init() {
     CHECK(gladLoadGLLoader(SDL_GL_GetProcAddress) != 0);
     
     // Check OpenGL properties
+    DEBUG_PRINT("OpenGL properties:\n");
     DEBUG_PRINT("Vendor:   %s\n", glGetString(GL_VENDOR));
     DEBUG_PRINT("Renderer: %s\n", glGetString(GL_RENDERER));
     DEBUG_PRINT("Version:  %s\n", glGetString(GL_VERSION));

@@ -21,7 +21,7 @@ OBJS_DIR_NAME = objs
 CC_DEPFLAGS = -MMD -MP
 
 INCLUDE_DIRS :=
-INCLUDE_DIRS += include
+INCLUDE_DIRS += include src
 
 CC_INCLUDE_DIRS_FLAGS = $(foreach dir,$(INCLUDE_DIRS),-I $(dir))
 
@@ -52,6 +52,11 @@ DEBUG_TARGET = $(DEBUG_DIR)/$(TARGET_NAME)
 SRCS :=
 SRCS += src/engine.c
 SRCS += src/glad/glad.c
+SRCS += src/utils/utils.c
+SRCS += src/vec_mat_quat/vec_mat_quat.c
+SRCS += src/shaders/shaders.c
+SRCS += src/cameras/cameras.c
+SRCS += src/frame_buffer_objects/frame_buffer_objects.c
 
 OBJS = $(patsubst $(SRCS_DIR)/%.c,%.o,$(SRCS))
 RELEASE_OBJS = $(patsubst %,$(RELEASE_OBJS_DIR)/%,$(OBJS))

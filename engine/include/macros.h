@@ -14,4 +14,6 @@
     } while (0)
 #endif
 
+#define UNCONSTIFY(type, x) (*(type*)(&x))
+
 #endif /* __MACROS_H__ */
