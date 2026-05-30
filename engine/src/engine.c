@@ -1,6 +1,8 @@
 #include "engine.h"
 
 #include "gl_macros.h"
+#include "shaders/shaders.h"
+#include "default_shader/default_shader.h"
 
 __attribute__((weak)) err_t init();
 __attribute__((weak)) err_t update();
@@ -21,6 +23,9 @@ static int32_t window_width = 0;
 static int32_t window_height = 0;
 static int32_t window_drawable_width = 0;
 static int32_t window_drawable_height = 0;
+
+static shader_t* default_shader = NULL;
+
 
 static err_t engine_clean() {
     err_t err = NO_ERROR;
@@ -116,6 +121,13 @@ static err_t engine_init() {
     SDL_GetWindowSize(window, &window_width, &window_height);
     SDL_GL_GetDrawableSize(window, &window_drawable_width, &window_drawable_height);
 
+    RETHROW_IF_ERROR(create_shader(
+        &default_shader,
+        default_shader_vertex_shader, default_shader_fragment_shader,
+        "in_vertex_position\0in_vertex_texcoord", 2,
+        "", 0
+    ));
+    
     if (init != NULL) {
         RETHROW_IF_ERROR(init());
     }

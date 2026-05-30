@@ -4,11 +4,6 @@
 
 TARGET_NAME = game.exe
 
-CROSS := i686-w64-mingw32
-
-CC := $(CROSS)-gcc
-LD := $(CROSS)-ld
-
 
 INCLUDE_ROOT_DIR = include
 ENGINE_INCLUDE_ROOT_DIR = ../engine/include
@@ -24,9 +19,6 @@ LIBS_DIR := libs
 
 ENGINE_RELEASE_LIBRARY_LOCATION = ../engine/build/release
 ENGINE_DEBUG_LIBRARY_LOCATION = ../engine/build/debug
-# ensures the libengine.a is linked fully
-CC_RELEASE_ENGINE_LINK_FLAGS = -Wl,--whole-archive -L"$(ENGINE_RELEASE_LIBRARY_LOCATION)" -l engine -Wl,--no-whole-archive
-CC_DEBUG_ENGINE_LINK_FLAGS = -Wl,--whole-archive -L"$(ENGINE_DEBUG_LIBRARY_LOCATION)" -l engine -Wl,--no-whole-archive
 
 LIBRARIES :=
 # LIBRARIES += SDL2main
@@ -36,35 +28,12 @@ LIBRARIES += opengl32
 # LIBRARIES += SDL2_mixer
 # LIBRARIES += libpng16-16
 # LIBRARIES += Ws2_32
-CC_LINK_FLAGS = $(foreach lib,$(LIBRARIES),-l $(lib)) -L $(LIBS_DIR)
-
-CC_RELEASE_LINK_FLAGS = $(CC_RELEASE_ENGINE_LINK_FLAGS) $(CC_LINK_FLAGS)
-CC_DEBUG_LINK_FLAGS = $(CC_DEBUG_ENGINE_LINK_FLAGS) $(CC_LINK_FLAGS)
-
-
-# Compiler flags for dependency generation
-CC_DEPFLAGS = -MMD -MP
 
 INCLUDE_DIRS :=
 INCLUDE_DIRS += $(INCLUDE_ROOT_DIR)
 
 ENGINE_INCLUDE_DIRS :=
 ENGINE_INCLUDE_DIRS += $(ENGINE_INCLUDE_ROOT_DIR)
-
-CC_INCLUDE_DIRS_FLAGS = $(foreach dir,$(INCLUDE_DIRS) $(ENGINE_INCLUDE_DIRS),-I $(dir))
-
-CC_FLAGS = $(CC_INCLUDE_DIRS_FLAGS) $(CC_DEPFLAGS)
-
-CC_RELEASE_FLAGS = $(CC_FLAGS) -O3 -D RELEASE
-CC_DEBUG_FLAGS = $(CC_FLAGS) -Wall -Werror -Wextra -g -D DEBUG
-
-
-SHADER_TO_C := ../engine/devops_tools/shader_to_c
-
-
-#############
-# Variables #
-#############
 
 BUILDS_DIR = $(BUILDS_DIR_NAME)
 
@@ -93,6 +62,41 @@ DEBUG_OBJS = $(patsubst %,$(DEBUG_OBJS_DIR)/%,$(OBJS))
 OBJS_DIRS := $(dir $(OBJS))
 RELEASE_DIRS := $(BUILDS_DIR) $(RELEASE_EXPORT_DIR) $(RELEASE_BUILD_DIR) $(RELEASE_OBJS_DIR) $(foreach dir, $(OBJS_DIRS), $(RELEASE_OBJS_DIR)/$(dir))
 DEBUG_DIRS := $(BUILDS_DIR) $(DEBUG_EXPORT_DIR) $(DEBUG_BUILD_DIR) $(DEBUG_OBJS_DIR) $(foreach dir, $(OBJS_DIRS), $(DEBUG_OBJS_DIR)/$(dir))
+
+
+###################
+# Tools and flags #
+###################
+
+CROSS := i686-w64-mingw32
+
+CC := $(CROSS)-gcc
+LD := $(CROSS)-ld
+
+
+# ensures the libengine.a is linked fully
+CC_RELEASE_ENGINE_LINK_FLAGS = -Wl,--whole-archive -L"$(ENGINE_RELEASE_LIBRARY_LOCATION)" -l engine -Wl,--no-whole-archive
+CC_DEBUG_ENGINE_LINK_FLAGS = -Wl,--whole-archive -L"$(ENGINE_DEBUG_LIBRARY_LOCATION)" -l engine -Wl,--no-whole-archive
+
+CC_LINK_FLAGS = $(foreach lib,$(LIBRARIES),-l $(lib)) -L $(LIBS_DIR)
+
+CC_RELEASE_LINK_FLAGS = $(CC_RELEASE_ENGINE_LINK_FLAGS) $(CC_LINK_FLAGS)
+CC_DEBUG_LINK_FLAGS = $(CC_DEBUG_ENGINE_LINK_FLAGS) $(CC_LINK_FLAGS)
+
+
+# Compiler flags for dependency generation
+CC_DEPFLAGS = -MMD -MP
+
+
+CC_INCLUDE_DIRS_FLAGS = $(foreach dir,$(INCLUDE_DIRS) $(ENGINE_INCLUDE_DIRS),-I $(dir))
+
+CC_FLAGS = $(CC_INCLUDE_DIRS_FLAGS) $(CC_DEPFLAGS)
+
+CC_RELEASE_FLAGS = $(CC_FLAGS) -O3 -D RELEASE
+CC_DEBUG_FLAGS = $(CC_FLAGS) -Wall -Werror -Wextra -g -D DEBUG
+
+
+SHADER_TO_C := ../engine/devops_tools/shader_to_c
 
 
 ##############

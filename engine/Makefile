@@ -4,11 +4,6 @@
 
 TARGET_NAME = libengine.a
 
-CROSS := i686-w64-mingw32
-
-CC := $(CROSS)-gcc
-AR := $(CROSS)-ar
-
 
 SRCS_DIR = src
 SHADERS_DIR = shaders
@@ -17,12 +12,56 @@ RELEASE_DIR_NAME = release
 DEBUG_DIR_NAME = debug
 OBJS_DIR_NAME = objs
 
+BUILDS_DIR = $(BUILDS_DIR_NAME)
+
+RELEASE_DIR = $(BUILDS_DIR)/$(RELEASE_DIR_NAME)
+RELEASE_OBJS_DIR = $(RELEASE_DIR)/$(OBJS_DIR_NAME)
+RELEASE_TARGET = $(RELEASE_DIR)/$(TARGET_NAME)
+
+DEBUG_DIR = $(BUILDS_DIR)/$(DEBUG_DIR_NAME)
+DEBUG_OBJS_DIR = $(DEBUG_DIR)/$(OBJS_DIR_NAME)
+DEBUG_TARGET = $(DEBUG_DIR)/$(TARGET_NAME)
+
+INCLUDE_DIRS := include src
+INCLUDE_DIRS += $(RELEASE_OBJS_DIR)/$(SHADERS_DIR)
+INCLUDE_DIRS += $(DEBUG_OBJS_DIR)/$(SHADERS_DIR)
+
+SRCS :=
+SRCS += src/engine.c
+SRCS += src/glad/glad.c
+SRCS += src/utils/utils.c
+SRCS += src/vec_mat_quat/vec_mat_quat.c
+SRCS += src/shaders/shaders.c
+SRCS += src/cameras/cameras.c
+SRCS += src/frame_buffer_objects/frame_buffer_objects.c
+SRCS += src/meshes_and_animations/meshes_and_animations.c
+
+SHADERS :=
+SHADERS += default_shader
+SRCS += $(foreach shader_name,$(SHADERS),$(SHADERS_DIR)/$(shader_name)/$(shader_name).c)
+
+OBJS := $(patsubst %.c,%.o,$(SRCS))
+
+RELEASE_OBJS = $(patsubst %,$(RELEASE_OBJS_DIR)/%,$(OBJS))
+DEBUG_OBJS = $(patsubst %,$(DEBUG_OBJS_DIR)/%,$(OBJS))
+
+OBJS_DIRS := $(dir $(OBJS))
+RELEASE_DIRS := $(BUILDS_DIR) $(RELEASE_DIR) $(RELEASE_OBJS_DIR) $(foreach dir, $(OBJS_DIRS), $(RELEASE_OBJS_DIR)/$(dir))
+DEBUG_DIRS := $(BUILDS_DIR) $(DEBUG_DIR) $(DEBUG_OBJS_DIR) $(foreach dir, $(OBJS_DIRS), $(DEBUG_OBJS_DIR)/$(dir))
+
+
+###################
+# Tools and flags #
+###################
+
+CROSS := i686-w64-mingw32
+
+CC := $(CROSS)-gcc
+AR := $(CROSS)-ar
+
 
 # Compiler flags for dependency generation
 CC_DEPFLAGS = -MMD -MP
-
-INCLUDE_DIRS :=
-INCLUDE_DIRS += include src
 
 CC_INCLUDE_DIRS_FLAGS = $(foreach dir,$(INCLUDE_DIRS),-I $(dir))
 
@@ -36,44 +75,6 @@ AR_FLAGS = -rcs
 
 
 SHADER_TO_C := devops_tools/shader_to_c
-
-
-#############
-# Variables #
-#############
-
-BUILDS_DIR = $(BUILDS_DIR_NAME)
-
-RELEASE_DIR = $(BUILDS_DIR)/$(RELEASE_DIR_NAME)
-RELEASE_OBJS_DIR = $(RELEASE_DIR)/$(OBJS_DIR_NAME)
-RELEASE_TARGET = $(RELEASE_DIR)/$(TARGET_NAME)
-
-DEBUG_DIR = $(BUILDS_DIR)/$(DEBUG_DIR_NAME)
-DEBUG_OBJS_DIR = $(DEBUG_DIR)/$(OBJS_DIR_NAME)
-DEBUG_TARGET = $(DEBUG_DIR)/$(TARGET_NAME)
-
-
-SRCS :=
-SRCS += src/engine.c
-SRCS += src/glad/glad.c
-SRCS += src/utils/utils.c
-SRCS += src/vec_mat_quat/vec_mat_quat.c
-SRCS += src/shaders/shaders.c
-SRCS += src/cameras/cameras.c
-SRCS += src/frame_buffer_objects/frame_buffer_objects.c
-SRCS += src/meshes_and_animations/meshes_and_animations.c
-SRCS += $(foreach shader_name,$(SHADERS),$(SHADERS_DIR)/$(shader_name)/$(shader_name).c)
-
-SHADERS :=
-SHADERS += default_shader
-OBJS := $(patsubst %.c,%.o,$(SRCS))
-
-RELEASE_OBJS = $(patsubst %,$(RELEASE_OBJS_DIR)/%,$(OBJS))
-DEBUG_OBJS = $(patsubst %,$(DEBUG_OBJS_DIR)/%,$(OBJS))
-
-OBJS_DIRS := $(dir $(OBJS))
-RELEASE_DIRS := $(BUILDS_DIR) $(RELEASE_DIR) $(RELEASE_OBJS_DIR) $(foreach dir, $(OBJS_DIRS), $(RELEASE_OBJS_DIR)/$(dir))
-DEBUG_DIRS := $(BUILDS_DIR) $(DEBUG_DIR) $(DEBUG_OBJS_DIR) $(foreach dir, $(OBJS_DIRS), $(DEBUG_OBJS_DIR)/$(dir))
 
 
 ##############

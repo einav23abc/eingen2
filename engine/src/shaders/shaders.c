@@ -343,7 +343,7 @@ err_t create_shader(shader_t** const out_shader,
 
     CHECK(shaders_amount < MAX_SHADERS_AMOUNT);
     for (uint32_t i = 0; i < MAX_SHADERS_AMOUNT; i++) {
-        if (shaders_list[i] != NULL) {
+        if (shaders_list[i] == NULL) {
             shader_index = i;
             break;
         }
