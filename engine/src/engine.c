@@ -188,21 +188,28 @@ static err_t engine_render() {
     // glClearColor(BACKGROUND_COLOR_R, BACKGROUND_COLOR_G, BACKGROUND_COLOR_B, 1.0);
     glClearColor(1.0, 0, 0, 1.0);
     DEBUG_CHECK_NO_GL_ERROR();
+
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
     DEBUG_CHECK_NO_GL_ERROR();
 
     glEnable(GL_DEPTH_TEST);
     DEBUG_CHECK_NO_GL_ERROR();
+    
     glDepthFunc(GL_LESS);
     DEBUG_CHECK_NO_GL_ERROR();
+    
     glDepthMask(GL_TRUE);
     DEBUG_CHECK_NO_GL_ERROR();
+    
     glEnable(GL_BLEND);
     DEBUG_CHECK_NO_GL_ERROR();
+    
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     DEBUG_CHECK_NO_GL_ERROR();
+    
     glEnable(GL_CULL_FACE);
     DEBUG_CHECK_NO_GL_ERROR();
+    
     glCullFace(GL_BACK);
 
     CHECK_NO_GL_ERROR();
@@ -210,7 +217,6 @@ static err_t engine_render() {
     if (render != NULL) {
         RETHROW_IF_ERROR(render());
     }
-
     CHECK_NO_GL_ERROR();
 
     // show drawn image - swap the buffers
