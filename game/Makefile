@@ -5,8 +5,6 @@
 TARGET_NAME = game.exe
 
 
-INCLUDE_ROOT_DIR = include
-ENGINE_INCLUDE_ROOT_DIR = ../engine/include
 SRCS_DIR = src
 SHADERS_DIR = shaders
 BUILDS_DIR_NAME = build
@@ -29,11 +27,9 @@ LIBRARIES += opengl32
 # LIBRARIES += libpng16-16
 # LIBRARIES += Ws2_32
 
-INCLUDE_DIRS :=
-INCLUDE_DIRS += $(INCLUDE_ROOT_DIR)
+INCLUDE_DIRS := include src shaders
 
-ENGINE_INCLUDE_DIRS :=
-ENGINE_INCLUDE_DIRS += $(ENGINE_INCLUDE_ROOT_DIR)
+ENGINE_INCLUDE_DIRS := ../engine/include
 
 BUILDS_DIR = $(BUILDS_DIR_NAME)
 
@@ -132,15 +128,7 @@ release: $(RELEASE_TARGET) | $(RELEASE_DIRS)
 $(RELEASE_TARGET): $(RELEASE_OBJS)
 	$(CC) $(CC_RELEASE_FLAGS) $(CC_RELEASE_LINK_FLAGS) $^ -o $@
 
-$(RELEASE_OBJS_DIR)/$(SRCS_DIR)/%.o: $(SRCS_DIR)/%.c | $(RELEASE_DIRS)
-	$(CC) $(CC_RELEASE_FLAGS) $< -c -o $@
-
-# release shader
-
-$(RELEASE_OBJS_DIR)/$(SHADERS_DIR)/%.h $(RELEASE_OBJS_DIR)/$(SHADERS_DIR)/%.c: $(SHADERS_DIR)/%.frag $(SHADERS_DIR)/%.vert | $(RELEASE_DIRS)
-	$(SHADER_TO_C) $(dir $<) $(RELEASE_OBJS_DIR)/$(SHADERS_DIR)
-
-$(RELEASE_OBJS_DIR)/$(SHADERS_DIR)/%.o: $(RELEASE_OBJS_DIR)/$(SHADERS_DIR)/%.c $(RELEASE_OBJS_DIR)/$(SHADERS_DIR)/%.h | $(RELEASE_DIRS)
+$(RELEASE_OBJS_DIR)/%.o: %.c | $(RELEASE_DIRS)
 	$(CC) $(CC_RELEASE_FLAGS) $< -c -o $@
 
 
@@ -151,16 +139,14 @@ debug: $(DEBUG_TARGET) | $(DEBUG_DIRS)
 $(DEBUG_TARGET): $(DEBUG_OBJS)
 	$(CC) $(CC_DEBUG_FLAGS) $(CC_DEBUG_LINK_FLAGS) $^ -o $@
 
-$(DEBUG_OBJS_DIR)/$(SRCS_DIR)/%.o: $(SRCS_DIR)/%.c | $(DEBUG_DIRS)
+$(DEBUG_OBJS_DIR)/%.o: %.c | $(DEBUG_DIRS)
 	$(CC) $(CC_DEBUG_FLAGS) $< -c -o $@
 
-# debug shaders
 
-$(DEBUG_OBJS_DIR)/$(SHADERS_DIR)/%.h $(DEBUG_OBJS_DIR)/$(SHADERS_DIR)/%.c: $(SHADERS_DIR)/%.frag $(SHADERS_DIR)/%.vert | $(DEBUG_DIRS)
-	$(SHADER_TO_C) $(dir $<) $(DEBUG_OBJS_DIR)/$(SHADERS_DIR)
+# shaders
 
-$(DEBUG_OBJS_DIR)/$(SHADERS_DIR)/%.o: $(DEBUG_OBJS_DIR)/$(SHADERS_DIR)/%.c $(DEBUG_OBJS_DIR)/$(SHADERS_DIR)/%.h | $(DEBUG_DIRS)
-	$(CC) $(CC_DEBUG_FLAGS) $< -c -o $@
+$(SHADERS_DIR)/%.h $(SHADERS_DIR)/%.c: $(SHADERS_DIR)/%.frag $(SHADERS_DIR)/%.vert | $(DEBUG_DIRS)
+	$(SHADER_TO_C) $(dir $<)
 
 
 clean:

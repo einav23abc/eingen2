@@ -20,7 +20,6 @@ def assert_path_is_file(path: Path) -> None:
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("shaders_dir_path", help="Path to the shaders folder")
-    parser.add_argument("c_shaders_dir_path", help="Path to the C shaders folder")
     parser.add_argument("--header-only", action="store_true", help="Only create the header file")
     parser.add_argument("--source-only", action="store_true", help="Only create the source file")
     args = parser.parse_args()
@@ -30,9 +29,6 @@ def main():
 
     if args.header_only and args.source_only:
         parser.error("--only-header and --only-source cannot be used together")
-
-    c_shaders_dir_path = Path(args.c_shaders_dir_path)
-    assert_path_is_dir(c_shaders_dir_path)
 
     shaders_dir_path = Path(args.shaders_dir_path)
     assert_path_is_dir(shaders_dir_path)
@@ -44,11 +40,8 @@ def main():
     fragment_shader_path = shaders_dir_path / f"{shader_name}.frag"
     assert_path_is_file(fragment_shader_path)
 
-    c_shader_dir_path = c_shaders_dir_path / shader_name
-    c_shader_dir_path.mkdir(exist_ok=True)
-
-    c_header_path = c_shader_dir_path / f"{shader_name}.h"
-    c_source_path = c_shader_dir_path / f"{shader_name}.c"
+    c_header_path = shaders_dir_path / f"{shader_name}.h"
+    c_source_path = shaders_dir_path / f"{shader_name}.c"
 
     if should_create_header:
         with c_header_path.open(mode="w") as c_header_file:

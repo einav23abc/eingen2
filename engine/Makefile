@@ -22,9 +22,7 @@ DEBUG_DIR = $(BUILDS_DIR)/$(DEBUG_DIR_NAME)
 DEBUG_OBJS_DIR = $(DEBUG_DIR)/$(OBJS_DIR_NAME)
 DEBUG_TARGET = $(DEBUG_DIR)/$(TARGET_NAME)
 
-INCLUDE_DIRS := include src
-INCLUDE_DIRS += $(RELEASE_OBJS_DIR)/$(SHADERS_DIR)
-INCLUDE_DIRS += $(DEBUG_OBJS_DIR)/$(SHADERS_DIR)
+INCLUDE_DIRS := include src shaders
 
 SRCS :=
 SRCS += src/engine.c
@@ -109,15 +107,7 @@ release: $(RELEASE_TARGET)
 $(RELEASE_TARGET): $(RELEASE_OBJS)
 	$(AR) $(AR_FLAGS) $@ $^
 
-$(RELEASE_OBJS_DIR)/$(SRCS_DIR)/%.o: $(SRCS_DIR)/%.c | $(RELEASE_DIRS)
-	$(CC) $(CC_RELEASE_FLAGS) $< -c -o $@
-
-# release shader
-
-$(RELEASE_OBJS_DIR)/$(SHADERS_DIR)/%.h $(RELEASE_OBJS_DIR)/$(SHADERS_DIR)/%.c: $(SHADERS_DIR)/%.frag $(SHADERS_DIR)/%.vert | $(RELEASE_DIRS)
-	$(SHADER_TO_C) $(dir $<) $(RELEASE_OBJS_DIR)/$(SHADERS_DIR)
-
-$(RELEASE_OBJS_DIR)/$(SHADERS_DIR)/%.o: $(RELEASE_OBJS_DIR)/$(SHADERS_DIR)/%.c $(RELEASE_OBJS_DIR)/$(SHADERS_DIR)/%.h | $(RELEASE_DIRS)
+$(RELEASE_OBJS_DIR)/%.o: %.c | $(RELEASE_DIRS)
 	$(CC) $(CC_RELEASE_FLAGS) $< -c -o $@
 
 
@@ -127,16 +117,14 @@ debug: $(DEBUG_TARGET)
 $(DEBUG_TARGET): $(DEBUG_OBJS)
 	$(AR) $(AR_FLAGS) $@ $^
 
-$(DEBUG_OBJS_DIR)/$(SRCS_DIR)/%.o: $(SRCS_DIR)/%.c | $(DEBUG_DIRS)
+$(DEBUG_OBJS_DIR)/%.o: %.c | $(DEBUG_DIRS)
 	$(CC) $(CC_DEBUG_FLAGS) $< -c -o $@
 
-# debug shaders
 
-$(DEBUG_OBJS_DIR)/$(SHADERS_DIR)/%.h $(DEBUG_OBJS_DIR)/$(SHADERS_DIR)/%.c: $(SHADERS_DIR)/%.frag $(SHADERS_DIR)/%.vert | $(DEBUG_DIRS)
-	$(SHADER_TO_C) $(dir $<) $(DEBUG_OBJS_DIR)/$(SHADERS_DIR)
+# shaders
 
-$(DEBUG_OBJS_DIR)/$(SHADERS_DIR)/%.o: $(DEBUG_OBJS_DIR)/$(SHADERS_DIR)/%.c $(DEBUG_OBJS_DIR)/$(SHADERS_DIR)/%.h | $(DEBUG_DIRS)
-	$(CC) $(CC_DEBUG_FLAGS) $< -c -o $@
+$(SHADERS_DIR)/%.h $(SHADERS_DIR)/%.c: $(SHADERS_DIR)/%.frag $(SHADERS_DIR)/%.vert | $(DEBUG_DIRS)
+	$(SHADER_TO_C) $(dir $<)
 
 
 clean:
