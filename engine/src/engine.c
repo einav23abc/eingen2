@@ -1,5 +1,7 @@
 #include "engine.h"
 
+#include "gl_macros.h"
+
 __attribute__((weak)) err_t init();
 __attribute__((weak)) err_t update();
 __attribute__((weak)) err_t render();
@@ -195,14 +197,20 @@ static err_t engine_render() {
     glEnable(GL_CULL_FACE);
     glCullFace(GL_BACK);
 
+    CHECK_NO_GL_ERROR();
+
     if (render != NULL) {
         RETHROW_IF_ERROR(render());
     }
+
+    CHECK_NO_GL_ERROR();
 
     // show drawn image - swap the buffers
     SDL_GL_SwapWindow(window);
     // wait until the buffers have been swaped
     glFinish();
+
+    CHECK_NO_GL_ERROR();
 
 cleanup:
     return err;
