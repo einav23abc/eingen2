@@ -11,7 +11,7 @@
         if (gl_error_as_error_value == NO_ERROR) {                          \
             gl_error_as_error_value = GENERAL_ERROR;                        \
         }                                                                   \
-        CHECK_WITH_ERROR(gl_error != GL_NO_ERROR, gl_error_as_error_value); \
+        CHECK_WITH_ERROR(gl_error == GL_NO_ERROR, gl_error_as_error_value); \
     } while (0)
 
 // glGetError() can be slow. For debug builds, check for each function. For release builds, use
