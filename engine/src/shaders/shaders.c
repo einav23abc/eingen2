@@ -34,9 +34,9 @@ static err_t gl_create_shader(uint32_t* const out_gl_shader, GLenum shader_type)
 
     CHECK(out_gl_shader != NULL);
 
-    FLUSH_LAST_GL_ERROR();
+    DEBUG_CHECK_NO_GL_ERROR();
     *out_gl_shader = glCreateShader(shader_type);
-    CHECK_NO_GL_ERROR();
+    DEBUG_CHECK_NO_GL_ERROR();
     CHECK(*out_gl_shader != INVALID_GL_PROGRAM);
 
 cleanup:
@@ -49,9 +49,9 @@ static err_t gl_shader_source(uint32_t gl_shader, const char* shader_source_stri
     CHECK(gl_shader != INVALID_GL_SHADER);
     CHECK(shader_source_string != NULL);
 
-    FLUSH_LAST_GL_ERROR();
+    DEBUG_CHECK_NO_GL_ERROR();
     glShaderSource(gl_shader, 1, &shader_source_string, NULL);
-    CHECK_NO_GL_ERROR();
+    DEBUG_CHECK_NO_GL_ERROR();
 
 cleanup:
     return err;
@@ -63,9 +63,7 @@ static err_t print_gl_shader_info_log(uint32_t gl_shader) {
 
     CHECK(gl_shader != INVALID_GL_SHADER);
 
-    FLUSH_LAST_GL_ERROR();
     glGetShaderInfoLog(gl_shader, sizeof(error_message_buffer), NULL, error_message_buffer);
-    
     error_message_buffer[sizeof(error_message_buffer) - 1] = '\0';
     DEBUG_PRINT("gl_shader %d info log:\n\"%s\"\n", gl_shader, error_message_buffer);
 
@@ -81,7 +79,7 @@ static err_t gl_compile_shader(uint32_t gl_shader) {
 
     CHECK(gl_shader != INVALID_GL_SHADER);
     
-    FLUSH_LAST_GL_ERROR();
+    CHECK_NO_GL_ERROR();
     glCompileShader(gl_shader);
     CHECK_NO_GL_ERROR();
     glGetShaderiv(gl_shader, GL_COMPILE_STATUS, &status);
@@ -101,7 +99,7 @@ static err_t gl_delete_shader(uint32_t gl_shader) {
 
     CHECK(gl_shader != INVALID_GL_SHADER);
     
-    FLUSH_LAST_GL_ERROR();
+    DEBUG_CHECK_NO_GL_ERROR();
     glDeleteShader(gl_shader);
     CHECK_NO_GL_ERROR();
 
@@ -114,9 +112,9 @@ static err_t gl_create_program(uint32_t* const out_gl_program) {
 
     CHECK(out_gl_program != NULL);
 
-    FLUSH_LAST_GL_ERROR();
+    DEBUG_CHECK_NO_GL_ERROR();
     *out_gl_program = glCreateProgram();
-    CHECK_NO_GL_ERROR();
+    DEBUG_CHECK_NO_GL_ERROR();
     CHECK(*out_gl_program != INVALID_GL_PROGRAM);
 
 cleanup:
@@ -129,9 +127,9 @@ static err_t gl_attach_shader(uint32_t gl_program, uint32_t gl_shader) {
     CHECK(gl_program != INVALID_GL_PROGRAM);
     CHECK(gl_shader != INVALID_GL_SHADER);
     
-    FLUSH_LAST_GL_ERROR();
+    DEBUG_CHECK_NO_GL_ERROR();
     glAttachShader(gl_program, gl_shader);
-    CHECK_NO_GL_ERROR();
+    DEBUG_CHECK_NO_GL_ERROR();
 
 cleanup:
     return err;
@@ -143,9 +141,7 @@ static err_t print_gl_program_info_log(uint32_t gl_program) {
 
     CHECK(gl_program != INVALID_GL_PROGRAM);
 
-    FLUSH_LAST_GL_ERROR();
-    glGetProgramInfoLog(gl_program, sizeof(error_message_buffer), NULL, error_message_buffer);
-    
+    glGetProgramInfoLog(gl_program, sizeof(error_message_buffer), NULL, error_message_buffer);    
     error_message_buffer[sizeof(error_message_buffer) - 1] = '\0';
     DEBUG_PRINT("gl_program %d info log:\n\"%s\"\n", gl_program, error_message_buffer);
 
@@ -159,7 +155,7 @@ static err_t gl_link_program(uint32_t gl_program) {
     err_t err = NO_ERROR;
     int32_t status = GL_FALSE;
 
-    FLUSH_LAST_GL_ERROR();
+    CHECK_NO_GL_ERROR();
     glLinkProgram(gl_program);
     CHECK_NO_GL_ERROR();
     glGetProgramiv(gl_program, GL_LINK_STATUS, &status);
@@ -184,7 +180,7 @@ static err_t gl_get_attribute_location(int32_t* out_attribute_location, uint32_t
     CHECK(gl_program != INVALID_GL_PROGRAM);
     CHECK(attribute_name != NULL);
 
-    FLUSH_LAST_GL_ERROR();
+    DEBUG_CHECK_NO_GL_ERROR();
     attribute_location = glGetAttribLocation(gl_program, attribute_name);
     CHECK_NO_GL_ERROR();
 
@@ -204,7 +200,7 @@ static err_t gl_get_uniform_location(int32_t* out_uniform_location, uint32_t gl_
     CHECK(gl_program != INVALID_GL_PROGRAM);
     CHECK(uniform_name != NULL);
 
-    FLUSH_LAST_GL_ERROR();
+    DEBUG_CHECK_NO_GL_ERROR();
     uniform_location = glGetUniformLocation(gl_program, uniform_name);
     CHECK_NO_GL_ERROR();
 
@@ -219,9 +215,9 @@ static err_t gl_use_program(uint32_t gl_program) {
 
     CHECK(gl_program != INVALID_GL_PROGRAM);
 
-    FLUSH_LAST_GL_ERROR();
+    DEBUG_CHECK_NO_GL_ERROR();
     glUseProgram(gl_program);
-    CHECK_NO_GL_ERROR();
+    DEBUG_CHECK_NO_GL_ERROR();
 
 cleanup:
     return err;
@@ -272,10 +268,14 @@ static err_t create_gl_shader(uint32_t* out_gl_shader, GLenum shader_type, const
     CHECK(out_gl_shader != NULL);
     *out_gl_shader = INVALID_GL_SHADER;
 
+    CHECK_NO_GL_ERROR();
+
     RETHROW_IF_ERROR(gl_create_shader(&gl_shader, shader_type));
 
     RETHROW_IF_ERROR(gl_shader_source(gl_shader, shader_str));
     RETHROW_IF_ERROR(gl_compile_shader(gl_shader));
+
+    CHECK_NO_GL_ERROR();
 
     *out_gl_shader = gl_shader;
 
@@ -355,6 +355,8 @@ err_t create_shader(shader_t** const out_shader,
     
     RETHROW_IF_ERROR(reset_shader(shader));
 
+    CHECK_NO_GL_ERROR();
+
     RETHROW_IF_ERROR(create_gl_shader(&shader->vert_gl_shader, GL_VERTEX_SHADER, vert_shader_str));
     RETHROW_IF_ERROR(create_gl_shader(&shader->frag_gl_shader, GL_FRAGMENT_SHADER, frag_shader_str));
 
@@ -388,6 +390,8 @@ err_t create_shader(shader_t** const out_shader,
         RETHROW_IF_ERROR(gl_get_uniform_location(&shader->uniform_locations[i], shader->gl_program, &uniform_names[uniform_names_offset]));
         uniform_names_offset += strlen(&(uniform_names[uniform_names_offset])) + 1;
     }
+
+    CHECK_NO_GL_ERROR();
 
     // add shader to shaders_list
     UNCONSTIFY(uint32_t, shader->shader_index) = shader_index;
@@ -453,7 +457,9 @@ err_t update_shader_uniforms_by_camera(shader_t* shader, camera_t* camera) {
     CHECK(shader->u_camera_wvp_mat_loc != -1);
 
     // TODO: err_t wrap glUniformMatrix4fv
+    DEBUG_CHECK_NO_GL_ERROR();
     glUniformMatrix4fv(shader->u_camera_wvp_mat_loc, 1, 0, camera->wvp_mat.mat);
+    DEBUG_CHECK_NO_GL_ERROR();
     shader->wvp_mat_camera_index = camera->camera_index;
 
 cleanup:

@@ -4,7 +4,6 @@
 #include "codeflow.h"
 #include "glad/glad.h"
 
-#define FLUSH_LAST_GL_ERROR() ((void)glGetError())
 #define CHECK_NO_GL_ERROR()                                                 \
     do {                                                                    \
         GLenum gl_error = glGetError();                                     \
@@ -14,5 +13,13 @@
         }                                                                   \
         CHECK_WITH_ERROR(gl_error != GL_NO_ERROR, gl_error_as_error_value); \
     } while (0)
+
+// glGetError() can be slow. For debug builds, check for each function. For release builds, use
+// CHECK_NO_GL_ERROR once for a set of gl function calls, or in functions which are fine to be slow.
+#ifdef DEBUG
+#define DEBUG_CHECK_NO_GL_ERROR() CHECK_NO_GL_ERROR()
+#else
+#define DEBUG_CHECK_NO_GL_ERROR() do {} while (0)
+#endif
 
 #endif // __GL_MACROS_H__

@@ -57,6 +57,7 @@ SRCS += src/vec_mat_quat/vec_mat_quat.c
 SRCS += src/shaders/shaders.c
 SRCS += src/cameras/cameras.c
 SRCS += src/frame_buffer_objects/frame_buffer_objects.c
+SRCS += src/meshes_and_animations/meshes_and_animations.c
 
 OBJS = $(patsubst $(SRCS_DIR)/%.c,%.o,$(SRCS))
 RELEASE_OBJS = $(patsubst %,$(RELEASE_OBJS_DIR)/%,$(OBJS))

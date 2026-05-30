@@ -28,9 +28,9 @@ static err_t gl_generate_framebuffer(uint32_t* out_gl_fbo) {
 
     CHECK(out_gl_fbo != NULL);
 
-    FLUSH_LAST_GL_ERROR();
+    DEBUG_CHECK_NO_GL_ERROR();
     glGenFramebuffers(1, out_gl_fbo);
-    CHECK_NO_GL_ERROR();
+    DEBUG_CHECK_NO_GL_ERROR();
 
 cleanup:
     return err;
@@ -39,9 +39,9 @@ cleanup:
 static err_t gl_bind_framebuffer(uint32_t gl_fbo) {
     err_t err = NO_ERROR;
 
-    FLUSH_LAST_GL_ERROR();
+    DEBUG_CHECK_NO_GL_ERROR();
     glBindFramebuffer(GL_FRAMEBUFFER, gl_fbo);
-    CHECK_NO_GL_ERROR();
+    DEBUG_CHECK_NO_GL_ERROR();
 
 cleanup:
     return err;
@@ -50,7 +50,7 @@ cleanup:
 static err_t gl_delete_texture(uint32_t gl_texture) {
     err_t err = NO_ERROR;
 
-    FLUSH_LAST_GL_ERROR();
+    DEBUG_CHECK_NO_GL_ERROR();
     glDeleteTextures(1, &gl_texture);
     CHECK_NO_GL_ERROR();
 
@@ -69,30 +69,32 @@ static err_t gl_generate_texture_2d(uint32_t* out_gl_texture,
     CHECK(out_gl_texture != NULL);
     *out_gl_texture = INVALID_FBO_ATTACHMENT_VALUE;
     
-    FLUSH_LAST_GL_ERROR();
+    CHECK_NO_GL_ERROR();
 
     glGenTextures(1, &gl_texture);
-    CHECK_NO_GL_ERROR();
+    DEBUG_CHECK_NO_GL_ERROR();
     
     glBindTexture(GL_TEXTURE_2D, gl_texture);
-    CHECK_NO_GL_ERROR();
+    DEBUG_CHECK_NO_GL_ERROR();
 
     glTexImage2D(GL_TEXTURE_2D, 0, internal_format, width, height, 0, format, type, NULL);
-    CHECK_NO_GL_ERROR();
+    DEBUG_CHECK_NO_GL_ERROR();
     
     // default texture parameters
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    CHECK_NO_GL_ERROR();
+    DEBUG_CHECK_NO_GL_ERROR();
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    CHECK_NO_GL_ERROR();
+    DEBUG_CHECK_NO_GL_ERROR();
 
     // user set texture parameters
     if (param_setter_callback != NULL) {
         RETHROW_IF_ERROR(param_setter_callback());
     }
+    DEBUG_CHECK_NO_GL_ERROR();
 
     // attach to current frame buffer object
     glFramebufferTexture2D(GL_FRAMEBUFFER, attachment, GL_TEXTURE_2D, gl_texture, 0);  
+    
     CHECK_NO_GL_ERROR();
 
     *out_gl_texture = gl_texture;
@@ -110,7 +112,7 @@ cleanup:
 static err_t gl_delete_renderbuffer(uint32_t gl_rbo) {
     err_t err = NO_ERROR;
 
-    FLUSH_LAST_GL_ERROR();
+    DEBUG_CHECK_NO_GL_ERROR();
     glDeleteRenderbuffers(1, &gl_rbo);
     CHECK_NO_GL_ERROR();
 
@@ -129,19 +131,20 @@ static err_t gl_generate_renderbuffer(  uint32_t* out_gl_rbo,
     CHECK(out_gl_rbo != NULL);
     *out_gl_rbo = INVALID_FBO_ATTACHMENT_VALUE;
 
-    FLUSH_LAST_GL_ERROR();
+    CHECK_NO_GL_ERROR();
 
     glGenRenderbuffers(1, &gl_rbo);
-    CHECK_NO_GL_ERROR();
+    DEBUG_CHECK_NO_GL_ERROR();
 
     glBindRenderbuffer(GL_RENDERBUFFER, gl_rbo);
-    CHECK_NO_GL_ERROR();
+    DEBUG_CHECK_NO_GL_ERROR();
 
     glRenderbufferStorage(GL_RENDERBUFFER, internalformat, width, height);
-    CHECK_NO_GL_ERROR();
+    DEBUG_CHECK_NO_GL_ERROR();
 
     // attach to current frame buffer object
     glFramebufferRenderbuffer(GL_FRAMEBUFFER, attachment, GL_RENDERBUFFER, gl_rbo);
+    
     CHECK_NO_GL_ERROR();
 
     *out_gl_rbo = gl_rbo;
@@ -163,9 +166,9 @@ static err_t gl_check_framebuffer_status(GLenum* out_status) {
     CHECK(out_status != NULL);
     *out_status = GL_FRAMEBUFFER_UNDEFINED;
 
-    FLUSH_LAST_GL_ERROR();
+    DEBUG_CHECK_NO_GL_ERROR();
     status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
-    CHECK_NO_GL_ERROR();
+    DEBUG_CHECK_NO_GL_ERROR();
 
     *out_status = status;
 
@@ -179,6 +182,19 @@ err_t check_fbo(fbo_t* fbo) {
     CHECK(fbo != NULL);
     CHECK(IS_FBO_INDEX_VALID(fbo->fbo_index));
     CHECK(fbos_list[fbo->fbo_index] == fbo);
+
+cleanup:
+    return err;
+}
+
+static err_t gl_delete_framebuffer(uint32_t gl_fbo) {
+    err_t err = NO_ERROR;
+
+    CHECK(gl_fbo != INVALID_GL_FBO);
+
+    DEBUG_CHECK_NO_GL_ERROR();
+    glDeleteFramebuffers(1, &gl_fbo);
+    CHECK_NO_GL_ERROR();
 
 cleanup:
     return err;
@@ -214,7 +230,8 @@ static void clean_fbo(fbo_t* fbo) {
         }
         fbo->secondery_attachment.value = INVALID_FBO_ATTACHMENT_VALUE;
         
-        glDeleteFramebuffers(1, &fbo->gl_fbo);
+        gl_delete_framebuffer(fbo->gl_fbo);
+        fbo->gl_fbo = INVALID_GL_FBO;
 
         free(fbo);
         fbo = NULL;
@@ -259,6 +276,8 @@ err_t create_fbo_ext_param( fbo_t** out_fbo,
     fbo->color_attachment_format = color_attachment_format;
     fbo->secondery_attachment_type = secondery_attachment_type;
     fbo->secondery_attachment.value = INVALID_FBO_ATTACHMENT_VALUE;
+
+    CHECK_NO_GL_ERROR();
 
     RETHROW_IF_ERROR(gl_generate_framebuffer(&fbo->gl_fbo));
     RETHROW_IF_ERROR(gl_bind_framebuffer(fbo->gl_fbo));
@@ -360,6 +379,8 @@ err_t create_fbo_ext_param( fbo_t** out_fbo,
     // rebind last frame buffer here
     RETHROW_IF_ERROR(use_fbo(fbos_list[last_fbo]));
 
+    CHECK_NO_GL_ERROR();
+
     // append fbo to fbos_list
     UNCONSTIFY(uint32_t, fbo->fbo_index) = fbo_index;
     fbos_list[fbo_index] = fbo;
@@ -427,13 +448,16 @@ cleanup:
 static err_t bind_texture_to_uniform(uint32_t gl_texture, int32_t uniform_location, uint8_t texture_num) {
     err_t err = NO_ERROR;
 
-    FLUSH_LAST_GL_ERROR();
+    DEBUG_CHECK_NO_GL_ERROR();
+    
     glUniform1i(uniform_location, texture_num);
-    CHECK_NO_GL_ERROR();
+    DEBUG_CHECK_NO_GL_ERROR();
+    
     glActiveTexture(GL_TEXTURE0 + texture_num);
-    CHECK_NO_GL_ERROR();
+    DEBUG_CHECK_NO_GL_ERROR();
+    
     glBindTexture(GL_TEXTURE_2D, gl_texture);
-    CHECK_NO_GL_ERROR();
+    DEBUG_CHECK_NO_GL_ERROR();
 
 cleanup:
     return err;

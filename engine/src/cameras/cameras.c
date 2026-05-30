@@ -3,6 +3,7 @@
 #include "macros.h"
 #include "codeflow.h"
 
+#include "gl_macros.h"
 #include "../shaders/shaders.h"
 
 
@@ -146,12 +147,14 @@ err_t update_viewport_by_camera(camera_t* camera) {
 
     CHECK_CAMERA(camera);
     
+    DEBUG_CHECK_NO_GL_ERROR();
     glViewport(
         camera->viewport_x,
         camera->viewport_y,
         camera->viewport_w,
         camera->viewport_h
     );
+    DEBUG_CHECK_NO_GL_ERROR();
     
 cleanup:
     return err;
