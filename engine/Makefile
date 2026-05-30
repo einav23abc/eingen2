@@ -11,6 +11,7 @@ AR := $(CROSS)-ar
 
 
 SRCS_DIR = src
+SHADERS_DIR = shaders
 BUILDS_DIR_NAME = build
 RELEASE_DIR_NAME = release
 DEBUG_DIR_NAME = debug
@@ -32,6 +33,9 @@ CC_DEBUG_FLAGS = $(CC_FLAGS) -Wall -Werror -Wextra -g -D DEBUG
 
 
 AR_FLAGS = -rcs
+
+
+SHADER_TO_C := devops_tools/shader_to_c
 
 
 #############
@@ -58,62 +62,79 @@ SRCS += src/shaders/shaders.c
 SRCS += src/cameras/cameras.c
 SRCS += src/frame_buffer_objects/frame_buffer_objects.c
 SRCS += src/meshes_and_animations/meshes_and_animations.c
+SRCS += $(foreach shader_name,$(SHADERS),$(SHADERS_DIR)/$(shader_name)/$(shader_name).c)
 
-OBJS = $(patsubst $(SRCS_DIR)/%.c,%.o,$(SRCS))
+SHADERS :=
+SHADERS += default_shader
+OBJS := $(patsubst %.c,%.o,$(SRCS))
+
 RELEASE_OBJS = $(patsubst %,$(RELEASE_OBJS_DIR)/%,$(OBJS))
 DEBUG_OBJS = $(patsubst %,$(DEBUG_OBJS_DIR)/%,$(OBJS))
 
-OBJS_DIRS = $(dir $(OBJS))
+OBJS_DIRS := $(dir $(OBJS))
+RELEASE_DIRS := $(BUILDS_DIR) $(RELEASE_DIR) $(RELEASE_OBJS_DIR) $(foreach dir, $(OBJS_DIRS), $(RELEASE_OBJS_DIR)/$(dir))
+DEBUG_DIRS := $(BUILDS_DIR) $(DEBUG_DIR) $(DEBUG_OBJS_DIR) $(foreach dir, $(OBJS_DIRS), $(DEBUG_OBJS_DIR)/$(dir))
 
 
 ##############
 # Make Rules #
 ##############
 
-.PHONY: clean all release debug release_dirs debug_dirs
+# Don't delete files after no longer needed
+.SECONDARY:
+
+.PHONY: default clean all release debug
 default: debug
 
 
 # Include generated dependency files
--include $(wildcard *.d)
+-include $(patsubst %.c,%.d,$(SRCS))
 
 
 all: release debug
 
 
 # dirs
-$(BUILDS_DIR):
+$(RELEASE_DIRS):
 	mkdir -p $@
 
-release_dirs: $(BUILDS_DIR)
-	mkdir -p $(RELEASE_DIR)
-	mkdir -p $(RELEASE_OBJS_DIR)
-	$(foreach dir,$(OBJS_DIRS), $(shell mkdir -p $(RELEASE_OBJS_DIR)/$(dir)))
-
-
-debug_dirs: $(BUILDS_DIR)
-	mkdir -p $(DEBUG_DIR)
-	mkdir -p $(DEBUG_OBJS_DIR)
-	$(foreach dir,$(OBJS_DIRS), $(shell mkdir -p $(DEBUG_OBJS_DIR)/$(dir)))
+$(DEBUG_DIRS):
+	mkdir -p $@
 
 
 # release
-release: release_dirs $(RELEASE_TARGET)
+release: $(RELEASE_TARGET)
 
 $(RELEASE_TARGET): $(RELEASE_OBJS)
 	$(AR) $(AR_FLAGS) $@ $^
 
-$(RELEASE_OBJS_DIR)/%.o: $(SRCS_DIR)/%.c release_dirs
+$(RELEASE_OBJS_DIR)/$(SRCS_DIR)/%.o: $(SRCS_DIR)/%.c | $(RELEASE_DIRS)
+	$(CC) $(CC_RELEASE_FLAGS) $< -c -o $@
+
+# release shader
+
+$(RELEASE_OBJS_DIR)/$(SHADERS_DIR)/%.h $(RELEASE_OBJS_DIR)/$(SHADERS_DIR)/%.c: $(SHADERS_DIR)/%.frag $(SHADERS_DIR)/%.vert | $(RELEASE_DIRS)
+	$(SHADER_TO_C) $(dir $<) $(RELEASE_OBJS_DIR)/$(SHADERS_DIR)
+
+$(RELEASE_OBJS_DIR)/$(SHADERS_DIR)/%.o: $(RELEASE_OBJS_DIR)/$(SHADERS_DIR)/%.c $(RELEASE_OBJS_DIR)/$(SHADERS_DIR)/%.h | $(RELEASE_DIRS)
 	$(CC) $(CC_RELEASE_FLAGS) $< -c -o $@
 
 
 # debug
-debug: debug_dirs $(DEBUG_TARGET)
+debug: $(DEBUG_TARGET)
 
 $(DEBUG_TARGET): $(DEBUG_OBJS)
 	$(AR) $(AR_FLAGS) $@ $^
 
-$(DEBUG_OBJS_DIR)/%.o: $(SRCS_DIR)/%.c debug_dirs
+$(DEBUG_OBJS_DIR)/$(SRCS_DIR)/%.o: $(SRCS_DIR)/%.c | $(DEBUG_DIRS)
+	$(CC) $(CC_DEBUG_FLAGS) $< -c -o $@
+
+# debug shaders
+
+$(DEBUG_OBJS_DIR)/$(SHADERS_DIR)/%.h $(DEBUG_OBJS_DIR)/$(SHADERS_DIR)/%.c: $(SHADERS_DIR)/%.frag $(SHADERS_DIR)/%.vert | $(DEBUG_DIRS)
+	$(SHADER_TO_C) $(dir $<) $(DEBUG_OBJS_DIR)/$(SHADERS_DIR)
+
+$(DEBUG_OBJS_DIR)/$(SHADERS_DIR)/%.o: $(DEBUG_OBJS_DIR)/$(SHADERS_DIR)/%.c $(DEBUG_OBJS_DIR)/$(SHADERS_DIR)/%.h | $(DEBUG_DIRS)
 	$(CC) $(CC_DEBUG_FLAGS) $< -c -o $@
 
 

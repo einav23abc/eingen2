@@ -1,0 +1,80 @@
+#!/usr/bin/python3
+
+from pathlib import Path
+import argparse
+import re
+
+
+def assert_valid_shader_name(shader_name: str) -> None:
+    assert re.fullmatch(r"[A-Za-z0-9_]+", shader_name), f"Shader name \"{shader_name}\" is invalid"
+
+def assert_path_is_dir(path: Path) -> None:
+    assert path.exists(), f"Directory {path} doesn't exist"
+    assert path.is_dir(), f"Path {path} is not a directory"
+
+def assert_path_is_file(path: Path) -> None:
+    assert path.exists(), f"File {path} doesn't exist"
+    assert path.is_file(), f"Path {path} is not a file"
+
+
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("shaders_dir_path", help="Path to the shaders folder")
+    parser.add_argument("c_shaders_dir_path", help="Path to the C shaders folder")
+    parser.add_argument("--header-only", action="store_true", help="Only create the header file")
+    parser.add_argument("--source-only", action="store_true", help="Only create the source file")
+    args = parser.parse_args()
+
+    should_create_header = not args.source_only
+    should_create_source = not args.header_only
+
+    if args.header_only and args.source_only:
+        parser.error("--only-header and --only-source cannot be used together")
+
+    c_shaders_dir_path = Path(args.c_shaders_dir_path)
+    assert_path_is_dir(c_shaders_dir_path)
+
+    shaders_dir_path = Path(args.shaders_dir_path)
+    assert_path_is_dir(shaders_dir_path)
+
+    shader_name = shaders_dir_path.name
+    assert_valid_shader_name(shader_name)
+    vertex_shader_path = shaders_dir_path / f"{shader_name}.vert"
+    assert_path_is_file(vertex_shader_path)
+    fragment_shader_path = shaders_dir_path / f"{shader_name}.frag"
+    assert_path_is_file(fragment_shader_path)
+
+    c_shader_dir_path = c_shaders_dir_path / shader_name
+    c_shader_dir_path.mkdir(exist_ok=True)
+
+    c_header_path = c_shader_dir_path / f"{shader_name}.h"
+    c_source_path = c_shader_dir_path / f"{shader_name}.c"
+
+    if should_create_header:
+        with c_header_path.open(mode="w") as c_header_file:
+            c_header_file.write(f"extern const char {shader_name}_vertex_shader[];\n")
+            c_header_file.write(f"extern const char {shader_name}_fragment_shader[];\n")
+
+    if should_create_source:
+        with c_source_path.open(mode="w") as c_source_file:
+            # for dependency generation
+            c_source_file.write(f"#include \"{shader_name}.h\"\n")
+            c_source_file.write(f"\n")
+
+            c_source_file.write(f"const char {shader_name}_vertex_shader[] = \n")
+            with vertex_shader_path.open() as vertex_shader_file:
+                for line in vertex_shader_file:
+                    line = line.rstrip("\r\n")
+                    c_source_file.write(f"\"{line}\\n\"\n")
+            c_source_file.write(f"\"\";\n")
+            c_source_file.write(f"\n")
+
+            c_source_file.write(f"const char {shader_name}_fragment_shader[] = \n")
+            with fragment_shader_path.open() as fragment_shader_file:
+                for line in fragment_shader_file:
+                    line = line.rstrip("\r\n")
+                    c_source_file.write(f"\"{line}\\n\"\n")
+            c_source_file.write(f"\"\";\n")
+
+if __name__ == "__main__":
+    main()
