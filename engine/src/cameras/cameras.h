@@ -78,11 +78,15 @@ err_t use_camera(camera_t* camera);
 
 err_t get_current_camera(camera_t** out_current_camera);
 
+void set_no_current_camera();
+
 err_t update_viewport_by_camera(camera_t* camera);
 
 err_t update_viewport_by_current_camera();
 
 void update_camera_world_view_projection_matrix(camera_t* camera);
+
+void update_all_cameras_world_view_projection_matrix();
 
 /* Destroys a camera.
  *

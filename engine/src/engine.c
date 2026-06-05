@@ -226,10 +226,17 @@ static err_t engine_render() {
 
     CHECK_NO_GL_ERROR();
 
+    reset_all_shaders_wvp_mat_camera_index();
+    update_all_cameras_world_view_projection_matrix();
+
+    RETHROW_IF_ERROR(use_shader(default_shader));
+
     if (render != NULL) {
         RETHROW_IF_ERROR(render());
     }
     CHECK_NO_GL_ERROR();
+
+    set_no_current_camera();
 
     // show drawn image - swap the buffers
     SDL_GL_SwapWindow(window);

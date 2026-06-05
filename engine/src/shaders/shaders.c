@@ -535,6 +535,20 @@ cleanup:
     return err;
 }
 
+void reset_all_shaders_wvp_mat_camera_index() {
+    for (uint32_t i = 0; i < MAX_SHADERS_AMOUNT; i++) {
+        if (shaders_list[i] == NULL) {
+            continue;
+        }
+
+        if (!shaders_list[i]->is_initialized) {
+            continue;
+        }
+
+        shaders_list[i]->wvp_mat_camera_index = INVALID_CAMERA_INDEX;
+    }
+}
+
 err_t destroy_shader(shader_t* shader) {
     err_t err = NO_ERROR;
     
@@ -553,7 +567,7 @@ cleanup:
 
 void clean_shaders() {
     DEBUG_PRINT("cleaning %u shaders\n", shaders_amount);
-    for (uint64_t i = 0; i < MAX_SHADERS_AMOUNT; i++) {
+    for (uint32_t i = 0; i < MAX_SHADERS_AMOUNT; i++) {
         if (shaders_list[i] != NULL) {
             destroy_shader(shaders_list[i]);
         }

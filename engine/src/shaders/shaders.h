@@ -45,7 +45,8 @@ typedef struct {
 
 err_t check_shader(shader_t* shader);
 
-/* Creates a shader.
+/** 
+ * Creates a shader.
  * 
  * The memory delocation of this shader is handled by the engine (by calling `clean_shaders()`).
  * 
@@ -66,7 +67,8 @@ err_t create_shader(shader_t** const out_shader,
                     const char* attribute_names , uint32_t attributes_count,
                     const char* uniform_names, uint32_t uniforms_count);
 
-/* Creates a shader.
+/** 
+ * Creates a shader.
  * 
  * The memory delocation of this shader is handled by the engine (by calling `clean_shaders()`).
  *
@@ -87,7 +89,8 @@ err_t create_shader_from_files( shader_t** const out_shader,
                                 const char* attribute_names , uint32_t attributes_count,
                                 const char* uniform_names, uint32_t uniforms_count);
 
-/* Sets the `current_shader` and uses it for all draw functions until a diffrent shader is used.
+/**
+ * Sets the `current_shader` and uses it for all draw functions until a diffrent shader is used.
  *
  * Updates the shader's `u_camera_world_view_projection_matrix` uniform by calling `update_shader_uniforms_by_current_camera()`,
  * Unless that uniform is already set to the current camera, Indicated by the `shader`'s `wvp_mat_camera_index`.
@@ -97,6 +100,11 @@ err_t create_shader_from_files( shader_t** const out_shader,
 err_t use_shader(shader_t* shader);
 
 err_t get_current_shader(shader_t** out_current_shader);
+
+/**
+ * Sets all shaders' `wvp_mat_camera_index` to an invalid camera index
+ */
+void reset_all_shaders_wvp_mat_camera_index();
 
 /**
  * Sets a shader's `u_camera_world_view_projection_matrix` uniform to the value of a camera's `world_view_projection_matrix`.
@@ -109,7 +117,8 @@ err_t update_shader_uniforms_by_camera(shader_t* shader, camera_t* camera);
 err_t update_shader_uniforms_by_current_camera(shader_t* shader);
 err_t update_current_shader_uniforms_by_camera(camera_t* camera);
 
-/* Destroys a shader.
+/**
+ * Destroys a shader.
  *
  * The shader will not be usable after destruction.
  *
@@ -119,7 +128,8 @@ err_t update_current_shader_uniforms_by_camera(camera_t* camera);
 */
 err_t destroy_shader(shader_t* shader);
 
-/* Called by the engine when exiting.
+/**
+ * Called by the engine when exiting.
  * Destroys all created shaders.
 */
 void clean_shaders();

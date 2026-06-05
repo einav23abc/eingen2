@@ -142,6 +142,10 @@ cleanup:
     return err;
 }
 
+void set_no_current_camera() {
+    current_camera = INVALID_CAMERA_INDEX;
+}
+
 err_t update_viewport_by_camera(camera_t* camera) {
     err_t err = NO_ERROR;
 
@@ -264,6 +268,20 @@ void update_camera_world_view_projection_matrix(camera_t* camera) {
     #undef cw
     #undef ch
     return;
+}
+
+void update_all_cameras_world_view_projection_matrix() {
+    for (uint32_t i = 0; i < MAX_CAMERAS_AMOUNT; i++) {
+        if (cameras_list[i] == NULL) {
+            continue;
+        }
+
+        if (!cameras_list[i]->is_initialized) {
+            continue;
+        }
+
+        update_camera_wvp_mat(cameras_list[i]);
+    }
 }
 
 err_t destroy_camera(camera_t* camera) {
