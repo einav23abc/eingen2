@@ -3,6 +3,7 @@
 #include "gl_macros.h"
 #include "shaders/shaders.h"
 #include "default_shader/default_shader.h"
+#include "simple_draw_utils/simple_draw_utils.h"
 
 __attribute__((weak)) err_t init();
 __attribute__((weak)) err_t update();
@@ -127,6 +128,8 @@ static err_t engine_init() {
         "in_vertex_position\0in_vertex_texcoord", 2,
         "", 0
     ));
+
+    RETHROW_IF_ERROR(init_simple_draw_utils());
     
     if (init != NULL) {
         RETHROW_IF_ERROR(init());
@@ -296,4 +299,20 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     UNUSED(nCmdShow);
 
     return main(0, NULL);
+}
+
+int32_t get_window_width() {
+    return window_width;
+}
+
+int32_t get_window_height() {
+    return window_height;
+}
+
+int32_t get_window_drawable_width() {
+    return window_drawable_width;
+}
+
+int32_t get_window_drawable_height() {
+    return window_drawable_height;
 }

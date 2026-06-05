@@ -57,16 +57,22 @@ typedef uint32_t err_t;
 #define CHECK_WITH_ERROR(exp, error_value) CHECK_GOTO_WITH_ERROR(exp, DEFAULT_CHECK_GOTO_LABEL, error_value)
 #define CHECK(exp) CHECK_WITH_ERROR(exp, GENERAL_ERROR) 
 
-#define RETHROW_NO_GOTO_IF_ERROR(err_exp)                                           \
-    do {                                                                            \
-        err_t local_error_value = err_exp;                                          \
-        CHECK_NO_GOTO_WITH_ERROR(!IS_ERROR(local_error_value), local_error_value);  \
+#define RETHROW_NO_GOTO_IF_ERROR(err_exp)                           \
+    do {                                                            \
+        err_t local_error_value = err_exp;                          \
+        if (IS_ERROR(local_error_value)) {                          \
+            DEBUG_PRINT("rethrown at %s:%u\n", __FILE__, __LINE__); \
+            THROW_NO_GOTO_WITH_ERROR(local_error_value);            \
+        }                                                           \
     } while (0)
 
-#define RETHROW_GOTO_IF_ERROR(err_exp, label)                                           \
-    do {                                                                                \
-        err_t local_error_value = err_exp;                                              \
-        CHECK_GOTO_WITH_ERROR(!IS_ERROR(local_error_value), label, local_error_value);  \
+#define RETHROW_GOTO_IF_ERROR(err_exp, label)                       \
+    do {                                                            \
+        err_t local_error_value = err_exp;                          \
+        if (IS_ERROR(local_error_value)) {                          \
+            DEBUG_PRINT("rethrown at %s:%u\n", __FILE__, __LINE__); \
+            THROW_GOTO_WITH_ERROR(label, local_error_value);        \
+        }                                                           \
     } while (0)
 
 #define RETHROW_IF_ERROR(err_exp) RETHROW_GOTO_IF_ERROR(err_exp, DEFAULT_CHECK_GOTO_LABEL)

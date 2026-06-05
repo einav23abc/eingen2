@@ -14,4 +14,9 @@
 #include "macros.h"
 #include "codeflow.h"
 
+int32_t get_window_width();
+int32_t get_window_height();
+int32_t get_window_drawable_width();
+int32_t get_window_drawable_height();
+
 #endif /* __ENGINE_H__ */

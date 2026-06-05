@@ -33,10 +33,13 @@ SRCS += src/shaders/shaders.c
 SRCS += src/cameras/cameras.c
 SRCS += src/frame_buffer_objects/frame_buffer_objects.c
 SRCS += src/meshes_and_animations/meshes_and_animations.c
+SRCS += src/simple_draw_utils/simple_draw_utils.c
 
 SHADERS :=
 SHADERS += default_shader
-SRCS += $(foreach shader_name,$(SHADERS),$(SHADERS_DIR)/$(shader_name)/$(shader_name).c)
+SHADERS += simple_draw_utils/screen_quad_mesh_shader
+SHADER_SRCS := $(foreach shader_path,$(SHADERS),$(SHADERS_DIR)/$(shader_path)/$(notdir $(shader_path)).c)
+SRCS += $(SHADER_SRCS)
 
 OBJS := $(patsubst %.c,%.o,$(SRCS))
 
@@ -82,7 +85,7 @@ SHADER_TO_C := devops_tools/shader_to_c
 # Don't delete files after no longer needed
 .SECONDARY:
 
-.PHONY: default clean all release debug
+.PHONY: default clean all release debug shaders
 default: debug
 
 
@@ -122,6 +125,8 @@ $(DEBUG_OBJS_DIR)/%.o: %.c | $(DEBUG_DIRS)
 
 
 # shaders
+
+shaders: $(SHADER_SRCS)
 
 $(SHADERS_DIR)/%.h $(SHADERS_DIR)/%.c: $(SHADERS_DIR)/%.frag $(SHADERS_DIR)/%.vert | $(DEBUG_DIRS)
 	$(SHADER_TO_C) $(dir $<)

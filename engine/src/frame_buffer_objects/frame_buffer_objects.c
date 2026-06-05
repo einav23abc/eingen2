@@ -377,7 +377,11 @@ err_t create_fbo_ext_param( fbo_t** out_fbo,
     CHECK(fbo_status == GL_FRAMEBUFFER_COMPLETE);
 
     // rebind last frame buffer here
-    RETHROW_IF_ERROR(use_fbo(fbos_list[last_fbo]));
+    if (last_fbo == INVALID_FBO_INDEX) {
+        RETHROW_IF_ERROR(use_default_fbo());
+    } else {
+        RETHROW_IF_ERROR(use_fbo(fbos_list[last_fbo]));
+    }
 
     CHECK_NO_GL_ERROR();
 

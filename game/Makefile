@@ -29,7 +29,7 @@ LIBRARIES += opengl32
 
 INCLUDE_DIRS := include src shaders
 
-ENGINE_INCLUDE_DIRS := ../engine/include
+ENGINE_INCLUDE_DIRS := ../engine/include ../engine/src
 
 BUILDS_DIR = $(BUILDS_DIR_NAME)
 
@@ -45,7 +45,9 @@ DEBUG_TARGET := $(DEBUG_EXPORT_DIR)/$(TARGET_NAME)
 
 
 SRCS := 
-SRCS += src/test.c
+SRCS += src/init.c
+# SRCS += src/update.c
+SRCS += src/render.c
 
 SHADERS :=
 SRCS += $(foreach shader_name,$(SHADERS),$(SHADERS_DIR)/$(shader_name)/$(shader_name).c)
