@@ -26,6 +26,14 @@ extern mesh_t* man_mesh;
 extern animation_t* man_anim_t_pose;
 extern animation_t* man_anim_run;
 
+extern mesh_t* cube_mesh;
+
+extern float sun_vector_x;
+extern float sun_vector_y;
+extern float sun_vector_z;
+extern camera_t* sun_shadow_map_camera;
+extern fbo_t* sun_shadow_map_fbo;
+extern shader_t* sun_shadow_map_shader;
 
 extern float player_vx;
 extern float player_vz;

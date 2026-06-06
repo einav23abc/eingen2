@@ -28,7 +28,7 @@ void game_camera_update() {
 
     // follow the player
     game_camera->x = player_x      - 60*cos(game_camera->ry+M_PI*0.5)*cos(game_camera->rx);
-    game_camera->y = player_y + 20 - 60*sin(game_camera->rx);
+    game_camera->y = player_y + 40 - 60*sin(game_camera->rx);
     game_camera->z = player_z      - 60*sin(game_camera->ry+M_PI*0.5)*cos(game_camera->rx);
 
     // perspective <-> orthographic togle
@@ -43,11 +43,9 @@ void game_camera_update() {
     }
 }
 
-err_t update() {
+void game_player_update() {
     player_vx = 0;
     player_vz = 0;
-
-    game_camera_update();
 
     // move left right (set velocity)
     if (keys[SDL_SCANCODE_A]) {
@@ -116,9 +114,23 @@ err_t update() {
     // player_last_animation_frame += delta_frames;
     player_current_animation_frame += delta_frames;
     player_animation_transition_frame += delta_frames;
+}
 
-    // DEBUG_PRINT("game_camera rotation: %f %f %f\n", game_camera->rx, game_camera->ry, game_camera->rz);
-    // DEBUG_PRINT("player position: %f %f %f\n", player_x, player_y, player_z);
+void sun_shadow_map_update() {
+    sun_shadow_map_camera->x = player_x;
+    sun_shadow_map_camera->y = player_y;
+    sun_shadow_map_camera->z = player_z;
+
+    sun_shadow_map_camera->ry = 0.002 * total_frames;
+    sun_vector_x = cos(sun_shadow_map_camera->ry + M_PI * 0.5) * cos(sun_shadow_map_camera->rx);
+    sun_vector_y = sin(sun_shadow_map_camera->rx);
+    sun_vector_z = sin(sun_shadow_map_camera->ry + M_PI * 0.5) * cos(sun_shadow_map_camera->rx);
+}
+
+err_t update() {
+    game_camera_update();
+    game_player_update();
+    sun_shadow_map_update();
 
     return NO_ERROR;
 }

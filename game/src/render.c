@@ -4,6 +4,28 @@
 #include "shaders/shaders.h"
 #include "simple_draw_utils/simple_draw_utils.h"
 
+err_t cube_draw(float x, float y, float z,
+                float w, float h, float d,
+                float rx, float ry, float rz) {
+    err_t err = NO_ERROR;
+    shader_t* current_shader = NULL;
+
+    RETHROW_IF_ERROR(get_current_shader(&current_shader));
+
+    // u_position
+    glUniform3f(current_shader->uniform_locations[0], x, y, z);
+    // u_scale
+    glUniform3f(current_shader->uniform_locations[1], w, h, d);
+    // u_quat_rotation
+    quat_t quat_rotation = quat_from_axis_angles_yzx(-rx, -ry, -rz);
+    glUniform4f(current_shader->uniform_locations[2], quat_rotation.x, quat_rotation.y, quat_rotation.z, quat_rotation.w);
+    
+    RETHROW_IF_ERROR(draw_mesh(cube_mesh));
+
+cleanup:
+    return err;
+}
+
 err_t render_game_world() {
     err_t err = NO_ERROR;
     quat_t quat_rotation = {0};
@@ -29,8 +51,7 @@ err_t render_game_world() {
     RETHROW_IF_ERROR(draw_mesh_posed(man_mesh));
     // RETHROW_IF_ERROR(draw_mesh(man_mesh));
 
-    simple_draw_utils_set_color(1, 0, 0, 1);
-    RETHROW_IF_ERROR(simple_draw_utils_draw_cube(100, 0, 100, 10, 10, 10));
+    RETHROW_IF_ERROR(cube_draw(0, 0, 0, 200, 10, 200, 0, 0, 0));
 
 cleanup:
     return err;
@@ -39,14 +60,24 @@ cleanup:
 static err_t game_render() {
     err_t err = NO_ERROR;
 
+    RETHROW_IF_ERROR(use_fbo(sun_shadow_map_fbo));
+    glClear(GL_DEPTH_BUFFER_BIT);
+    RETHROW_IF_ERROR(use_camera(sun_shadow_map_camera));
+    RETHROW_IF_ERROR(use_shader(sun_shadow_map_shader));
+    RETHROW_IF_ERROR(render_game_world());
+
+
+    RETHROW_IF_ERROR(use_fbo(outport_fbo));
     RETHROW_IF_ERROR(use_camera(game_camera));
     RETHROW_IF_ERROR(use_shader(global_shader));
     // u_camera_position
     glUniform3f(global_shader->uniform_locations[3], game_camera->x, game_camera->y, game_camera->z);
     // u_sun_vector
-    glUniform3f(global_shader->uniform_locations[4], 0.5, -2, 1);
+    glUniform3f(global_shader->uniform_locations[4], sun_vector_x, sun_vector_y, sun_vector_z);
+    // u_sun_shadow_map_wvp_mat
+    glUniformMatrix4fv(global_shader->uniform_locations[5], 1, 0, sun_shadow_map_camera->wvp_mat.mat);
     // u_sun_shadow_map_texture
-    // bind_fbo_depth_stencil_texture(sun_shadow_map_fbo, global_shader->uniform_locations[6], 1);
+    RETHROW_IF_ERROR(bind_fbo_depth_stencil_texture(sun_shadow_map_fbo, global_shader->uniform_locations[6], 1));
 
     RETHROW_IF_ERROR(render_game_world());
 

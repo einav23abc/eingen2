@@ -39,23 +39,23 @@ float random(vec3 seed, int i) {
 
 void main(){
     float normal_dot_sun = dot(v_normal, -u_sun_vector);
-    float light = normal_dot_sun * 0.5 + 0.5;
+    float light = normal_dot_sun;
 
-    // vec3 sun_shadow_map_position = (vec4(v_position, 1.0) * u_sun_shadow_map_wvp_mat).xyz * 0.5 + 0.5;
+    vec3 sun_shadow_map_position = (vec4(v_position, 1.0) * u_sun_shadow_map_wvp_mat).xyz * 0.5 + 0.5;
 
-    // float sun_current_depth = sun_shadow_map_position.z;
-    // float bias = max(0.00005, 0.0002 * (1.0 - normal_dot_sun));
-    // float shadow = 1.0;
-    // for (int i = 0; i < 4; i++) {
-    //     int index = int(16.0 * random(gl_FragCoord.xyy, i))%16;
-    //     float sun_closest_depth = texture2D(u_sun_shadow_map_texture, sun_shadow_map_position.xy + poisson_sampling_disk[index]/(1080.0*2.0)).r;
-    //     if (sun_closest_depth + bias < sun_current_depth) {
-    //         shadow -= 0.25;
-    //     }
-    // }
+    float sun_current_depth = sun_shadow_map_position.z;
+    float bias = max(0.00005, 0.0002 * (1.0 - normal_dot_sun));
+    float shadow = 1.0;
+    for (int i = 0; i < 4; i++) {
+        int index = int(16.0 * random(gl_FragCoord.xyy, i)) % 16;
+        float sun_closest_depth = texture2D(u_sun_shadow_map_texture, sun_shadow_map_position.xy + poisson_sampling_disk[index]/(1080.0*2.0)).r;
+        if (sun_closest_depth + bias < sun_current_depth) {
+            shadow -= 0.25;
+        }
+    }
     
-    // float lighting = clamp(light * shadow,0.0,1.0)*0.9+0.1;
-    float lighting = clamp(light, 0.0, 1.0) * 0.75 + 0.25;
+    float lighting = clamp(light * shadow, 0.0, 1.0) * 0.9 + 0.1;
+    // float lighting = clamp(light, 0.0, 1.0) * 0.75 + 0.25;
 
     float aerial_mixing = max(0.0,min(1.0, 1 - 0.001 * distance(v_position, u_camera_position)));
     const vec3 aerial_color = vec3(0.2, 0.2, 0.3);

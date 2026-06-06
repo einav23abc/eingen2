@@ -26,6 +26,7 @@ static SDL_Event event = {0};
 uint32_t frame_start_time = 0;
 uint32_t delta_time = 0;
 float delta_frames = 0;
+float total_frames = 0;
 static uint32_t acum_frames_time = 0;
 static float acum_delta_frames = 0;
 static uint32_t acum_frames_amount = 0;
@@ -315,6 +316,7 @@ int32_t main(int32_t argc, char** argv) {
 
         delta_time = SDL_GetTicks() - frame_start_time;
         delta_frames = ((float)delta_time)/TARGET_FRAME_DELAY;
+        total_frames += delta_frames;
 
         acum_frames_amount += 1;
         acum_frames_time += delta_time;
