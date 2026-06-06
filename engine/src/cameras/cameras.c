@@ -65,7 +65,7 @@ err_t create_camera(camera_t** const out_camera,
 
     camera->is_initialized = 0;
 
-    camera->is_prespective = (is_prespective > 0);
+    camera->is_prespective = is_prespective;
 
     camera->x = x;
     camera->y = y;

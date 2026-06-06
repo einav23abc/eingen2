@@ -20,13 +20,13 @@
 #define IS_ANIMATION_INDEX_VALID(animation_index) (animation_index < MAX_ANIMATIONS_AMOUNT)
 
 
-uint64_t meshes_amount = 0;
+uint32_t meshes_amount = 0;
 mesh_t* meshes_list[_MAX_MESHES_AMOUNT_];
-const uint64_t MAX_MESHES_AMOUNT = _MAX_MESHES_AMOUNT_;
+const uint32_t MAX_MESHES_AMOUNT = _MAX_MESHES_AMOUNT_;
 
-uint64_t animations_amount = 0;
+uint32_t animations_amount = 0;
 animation_t* animations_list[_MAX_ANIMATIONS_AMOUNT_];
-const uint64_t MAX_ANIMATIONS_AMOUNT = _MAX_ANIMATIONS_AMOUNT_;
+const uint32_t MAX_ANIMATIONS_AMOUNT = _MAX_ANIMATIONS_AMOUNT_;
 
 
 
@@ -60,6 +60,20 @@ static err_t gl_delete_vertex_array(uint32_t gl_vao) {
 
     DEBUG_CHECK_NO_GL_ERROR();
     glDeleteVertexArrays(1, &gl_vao);
+    CHECK_NO_GL_ERROR();
+
+cleanup:
+    return err;
+}
+
+static err_t gl_delete_buffers(uint32_t* gl_buffers, uint32_t buffers_amount) {
+    err_t err = NO_ERROR;
+
+    CHECK(gl_buffers != NULL);
+    CHECK(buffers_amount > 0);
+
+    DEBUG_CHECK_NO_GL_ERROR();
+    glDeleteBuffers(buffers_amount, gl_buffers);
     CHECK_NO_GL_ERROR();
 
 cleanup:
@@ -121,10 +135,10 @@ static err_t bind_mesh_internal(uint32_t* out_gl_vao,
         }
         DEBUG_CHECK_NO_GL_ERROR();
         
-        glEnableVertexAttribArray(i);
-        DEBUG_CHECK_NO_GL_ERROR();
-
         glVertexAttribDivisor(i, vbos_data[i].divisor);
+        DEBUG_CHECK_NO_GL_ERROR();
+        
+        glEnableVertexAttribArray(i);
         DEBUG_CHECK_NO_GL_ERROR();
     }
 
@@ -137,9 +151,7 @@ cleanup:
             *out_gl_vao = INVALID_GL_VAO;
         }
         if (out_gl_vbos != NULL) {
-            for (uint32_t i = 0; i < vbos_amount; i++) {
-                // delete gl_vbos[i]
-            }
+            gl_delete_buffers(out_gl_vbos, vbos_amount);
         }
     }
 
@@ -191,24 +203,10 @@ cleanup:
     return err;
 }
 
-static err_t gl_delete_buffers(uint32_t* gl_buffers, uint32_t buffers_amount) {
-    err_t err = NO_ERROR;
-
-    CHECK(gl_buffers != NULL);
-    CHECK(buffers_amount > 0);
-
-    DEBUG_CHECK_NO_GL_ERROR();
-    glDeleteBuffers(buffers_amount, gl_buffers);
-    CHECK_NO_GL_ERROR();
-
-cleanup:
-    return err;
-}
-
 static void clean_mesh(mesh_t* mesh) {
     if (mesh != NULL) {
         
-        gl_delete_buffers(&mesh->gl_vao, 1);
+        gl_delete_vertex_array(mesh->gl_vao);
         mesh->gl_vao = INVALID_GL_VAO;
         
         gl_delete_buffers(mesh->gl_vbos, mesh->vbos_amount);
@@ -520,24 +518,24 @@ err_t mesh_generate_ball(mesh_t** out_mesh, uint32_t divisions, uint8_t unbinded
 
     const float start_vertices_position_arr[] = {
         // Side A
-            sqrt(8.0/9.0),  0,             -1.0/3.0,
+         sqrt(8.0/9.0),  0,             -1.0/3.0,
         -sqrt(2.0/9.0),  sqrt(2.0/3.0), -1.0/3.0,
         -sqrt(2.0/9.0), -sqrt(2.0/3.0), -1.0/3.0,
         
         // Side B
-            sqrt(8.0/9.0),  0,             -1.0/3.0,
+         sqrt(8.0/9.0),  0,             -1.0/3.0,
         -sqrt(2.0/9.0),  sqrt(2.0/3.0), -1.0/3.0,
-            0,              0,              1,
+         0,              0,              1,
         
         // Side C
-            sqrt(8.0/9.0),  0,             -1.0/3.0,
+         sqrt(8.0/9.0),  0,             -1.0/3.0,
         -sqrt(2.0/9.0), -sqrt(2.0/3.0), -1.0/3.0,
-            0,              0,              1,
+         0,              0,              1,
         
         // Side D
         -sqrt(2.0/9.0),  sqrt(2.0/3.0), -1.0/3.0,
         -sqrt(2.0/9.0), -sqrt(2.0/3.0), -1.0/3.0,
-            0,              0,              1
+         0,              0,              1
     };
     uint32_t vertices_amount = 12;
 
@@ -1095,60 +1093,60 @@ cleanup:
 // TOOD: revisit this hot mess
 err_t mesh_from_collada_dae_ext(mesh_t** out_mesh, const char* dae_file_path, quat_vec_vec_t transform_qvv, uint8_t unbinded) {
     err_t err = NO_ERROR;
-    char* dae_str;
+    char* dae_str = NULL;
 
     mesh_t* mesh = NULL;
-    int64_t str_i;
-    int64_t dstr_i;
+    int64_t str_i = 0;
+    int64_t dstr_i = 0;
 
-    uint64_t vertices_positions_array_length;
-    float* vertices_positions_array;
-    uint64_t vertices_normals_array_length;
-    float* vertices_normals_array;
-    uint64_t vertices_texcoords_array_length;
-    float* vertices_texcoords_array;
-    uint64_t vertices_joint_ids_array_length;
-    int32_t* vertices_joint_ids_array;
-    uint64_t vertices_joint_wheights_array_length;
-    float* vertices_joint_wheights_array;
+    uint64_t vertices_positions_array_length = 0;
+    float* vertices_positions_array = NULL;
+    uint64_t vertices_normals_array_length = 0;
+    float* vertices_normals_array = NULL;
+    uint64_t vertices_texcoords_array_length = 0;
+    float* vertices_texcoords_array = NULL;
+    uint64_t vertices_joint_ids_array_length = 0;
+    int32_t* vertices_joint_ids_array = NULL;
+    uint64_t vertices_joint_wheights_array_length = 0;
+    float* vertices_joint_wheights_array = NULL;
     
-    uint64_t joints_data_count_array_length;
-    int32_t* joints_data_count_array;
-    uint64_t joints_data_array_length;
-    int32_t* joints_data_array;
-    uint64_t joint_wheights_array_length;
-    float* joint_wheights_array;
+    uint64_t joints_data_count_array_length = 0;
+    int32_t* joints_data_count_array = NULL;
+    uint64_t joints_data_array_length = 0;
+    int32_t* joints_data_array = NULL;
+    uint64_t joint_wheights_array_length = 0;
+    float* joint_wheights_array = NULL;
 
-    uint64_t triangles_count;
-    uint64_t current_triangles_count;
-    uint64_t current_triangle_index;
-    int32_t* triangles_data_arr;
-    int32_t vertex_i;
-    int32_t normal_i;
-    int32_t texcoord_i;
-    int32_t joint_data_count;
-    uint64_t joint_data_index;
-    float joint_data_wheight_max1;
-    int64_t joint_data_wheight_max1_index;
-    float joint_data_wheight_max2;
-    int64_t joint_data_wheight_max2_index;
-    float joint_data_wheight_max3;
-    int64_t joint_data_wheight_max3_index;
-    float joint_data_wheight_tmp;
-    int64_t joint_data_wheight_tmp_index;
-    uint64_t indice_index;
-    float vertex_joint_wheights_total;
-    vec3_t vec3;
+    uint64_t triangles_count = 0;
+    uint64_t current_triangles_count = 0;
+    uint64_t current_triangle_index = 0;
+    int32_t* triangles_data_arr = NULL;
+    int32_t vertex_i = 0;
+    int32_t normal_i = 0;
+    int32_t texcoord_i = 0;
+    int32_t joint_data_count = 0;
+    uint64_t joint_data_index = 0;
+    float joint_data_wheight_max1 = 0;
+    int64_t joint_data_wheight_max1_index = 0;
+    float joint_data_wheight_max2 = 0;
+    int64_t joint_data_wheight_max2_index = 0;
+    float joint_data_wheight_max3 = 0;
+    int64_t joint_data_wheight_max3_index = 0;
+    float joint_data_wheight_tmp = 0;
+    int64_t joint_data_wheight_tmp_index = 0;
+    uint64_t indice_index = 0;
+    float vertex_joint_wheights_total = 0;
+    vec3_t vec3 = {0};
 
-    uint32_t* indices_array;
-    float* vbo_vertices_position_arr;
-    float* vbo_vertices_texcoord_arr;
-    float* vbo_vertices_normal_arr;
-    int32_t* vbo_vertices_joint_id_arr;
-    float* vbo_vertices_joint_wheight_arr;
+    uint32_t* indices_array = NULL;
+    float* vbo_vertices_position_arr = NULL;
+    float* vbo_vertices_texcoord_arr = NULL;
+    float* vbo_vertices_normal_arr = NULL;
+    int32_t* vbo_vertices_joint_id_arr = NULL;
+    float* vbo_vertices_joint_wheight_arr = NULL;
 
-    uint64_t joints_inverse_bind_matrices_array_length;
-    float* joints_inverse_bind_matrices_array;
+    uint64_t joints_inverse_bind_matrices_array_length = 0;
+    float* joints_inverse_bind_matrices_array = NULL;
 
 
     CHECK(out_mesh != NULL);
@@ -1195,7 +1193,7 @@ err_t mesh_from_collada_dae_ext(mesh_t** out_mesh, const char* dae_file_path, qu
     str_i += str_find_substr(&(dae_str[str_i]), "\">");
     str_i += strlen("\">");
     joint_wheights_array = str_to_float_array(&(dae_str[str_i]), joint_wheights_array_length);
-    CHECK(joint_wheights_array == NULL);
+    CHECK(joint_wheights_array != NULL);
 
     // joints data count array
     str_i = str_find_substr(dae_str, "<vertex_weights count=\"");
@@ -1204,7 +1202,7 @@ err_t mesh_from_collada_dae_ext(mesh_t** out_mesh, const char* dae_file_path, qu
     str_i += str_find_substr(&(dae_str[str_i]), "<vcount>");
     str_i += strlen("<vcount>");
     joints_data_count_array = str_to_int_array(&(dae_str[str_i]), joints_data_count_array_length);
-    CHECK(joints_data_count_array == NULL);
+    CHECK(joints_data_count_array != NULL);
 
     // joints data array
     joints_data_array_length = 0;
@@ -1215,7 +1213,7 @@ err_t mesh_from_collada_dae_ext(mesh_t** out_mesh, const char* dae_file_path, qu
     str_i += str_find_substr(&(dae_str[str_i]), "<v>");
     str_i += strlen("<v>");
     joints_data_array = str_to_int_array(&(dae_str[str_i]), joints_data_array_length);
-    CHECK(joints_data_array == NULL);
+    CHECK(joints_data_array != NULL);
 
     // vertex joint wheights and vertex joint ids arrays
     vertices_joint_ids_array_length = joints_data_count_array_length*3;
@@ -1497,23 +1495,56 @@ err_t mesh_from_collada_dae_ext(mesh_t** out_mesh, const char* dae_file_path, qu
     mesh = NULL;
 
 cleanup:
-    if (dae_str != NULL)                            {free(dae_str);}
-    if (vertices_positions_array != NULL)           {free(vertices_positions_array);}
-    if (vertices_normals_array != NULL)             {free(vertices_normals_array);}
-    if (vertices_texcoords_array != NULL)           {free(vertices_texcoords_array);}
-    if (vertices_joint_ids_array != NULL)           {free(vertices_joint_ids_array);}
-    if (vertices_joint_wheights_array != NULL)      {free(vertices_joint_wheights_array);}
-    if (joints_data_count_array != NULL)            {free(joints_data_count_array);}
-    if (joints_data_array != NULL)                  {free(joints_data_array);}
-    if (joint_wheights_array != NULL)               {free(joint_wheights_array);}
-    if (indices_array != NULL)                      {free(indices_array);}
-    if (vbo_vertices_position_arr != NULL)          {free(vbo_vertices_position_arr);}
-    if (vbo_vertices_texcoord_arr != NULL)          {free(vbo_vertices_texcoord_arr);}
-    if (vbo_vertices_normal_arr != NULL)            {free(vbo_vertices_normal_arr);}
-    if (vbo_vertices_joint_id_arr != NULL)          {free(vbo_vertices_joint_id_arr);}
-    if (vbo_vertices_joint_wheight_arr != NULL)     {free(vbo_vertices_joint_wheight_arr);}
-    if (triangles_data_arr != NULL)                 {free(triangles_data_arr);}
-    if (joints_inverse_bind_matrices_array != NULL) {free(joints_inverse_bind_matrices_array);}
+    free(dae_str);
+    dae_str = NULL;
+
+    free(vertices_positions_array);
+    vertices_positions_array = NULL;
+
+    free(vertices_normals_array);
+    vertices_normals_array = NULL;
+
+    free(vertices_texcoords_array);
+    vertices_texcoords_array = NULL;
+
+    free(vertices_joint_ids_array);
+    vertices_joint_ids_array = NULL;
+
+    free(vertices_joint_wheights_array);
+    vertices_joint_wheights_array = NULL;
+
+    free(joints_data_count_array);
+    joints_data_count_array = NULL;
+
+    free(joints_data_array);
+    joints_data_array = NULL;
+
+    free(joint_wheights_array);
+    joint_wheights_array = NULL;
+
+    free(indices_array);
+    indices_array = NULL;
+
+    free(vbo_vertices_position_arr);
+    vbo_vertices_position_arr = NULL;
+
+    free(vbo_vertices_texcoord_arr);
+    vbo_vertices_texcoord_arr = NULL;
+
+    free(vbo_vertices_normal_arr);
+    vbo_vertices_normal_arr = NULL;
+
+    free(vbo_vertices_joint_id_arr);
+    vbo_vertices_joint_id_arr = NULL;
+
+    free(vbo_vertices_joint_wheight_arr);
+    vbo_vertices_joint_wheight_arr = NULL;
+
+    free(triangles_data_arr);
+    triangles_data_arr = NULL;
+
+    free(joints_inverse_bind_matrices_array);
+    joints_inverse_bind_matrices_array = NULL;
     
     if (IS_ERROR(err) && mesh != NULL) {
         clean_mesh(mesh);
@@ -1652,14 +1683,16 @@ err_t animation_from_collada_dae_ext(animation_t** out_animation, const char* da
                 break;
             }
         }
-        
         if (joint_i == -1) {
-            printf("could not find joint \"%s\"\n", name);
+            DEBUG_PRINT("could not find joint \"%s\"\n", name);
             THROW();
         }
 
         free(name);
         name = NULL;
+
+        // check we didn't already parse this joint
+        CHECK(anim->joints_key_frames[joint_i].key_frames == NULL);
 
         // find joints' keyframes amount
         str_i += dstr_i;
@@ -1722,7 +1755,7 @@ err_t animation_from_collada_dae_ext(animation_t** out_animation, const char* da
         str_i += strlen(">");
         key_frames_transform_matrices_array = str_to_float_array(&(dae_str[str_i]), 16);
         CHECK(key_frames_transform_matrices_array != NULL);
-        
+
         anim->joints_key_frames[i].key_frames_amount = 1;
         anim->joints_key_frames[i].key_frames = malloc(sizeof(key_frame_t)*anim->joints_key_frames[i].key_frames_amount);
         CHECK(anim->joints_key_frames[i].key_frames != NULL);
@@ -2043,17 +2076,33 @@ cleanup:
 }
 
 void clean_meshes() {
-    #ifdef DEBUG_SOFT_MODE
-    printf("cleaning %u meshes\n", meshes_amount);
-    #endif
-    for (uint64_t i = 0; i < meshes_amount; i++) clean_mesh(meshes_list[i]);
+    DEBUG_PRINT("cleaning %u meshes\n", meshes_amount);
+    
+    for (uint64_t i = 0; i < MAX_MESHES_AMOUNT; i++) {
+        if (meshes_list[i] != NULL) {
+            destroy_mesh(meshes_list[i]);
+        }
+    }
+
+    if (meshes_amount != 0) {
+        DEBUG_PRINT("leaked a mesh\n");
+    }
+
     meshes_amount = 0;
 }
 void clean_animations() {
-    #ifdef DEBUG_SOFT_MODE
-    printf("cleaning %u animations\n", animations_amount);
-    #endif
-    for (uint64_t i = 0; i < animations_amount; i++) clean_animation(animations_list[i]);
+    DEBUG_PRINT("cleaning %u animations\n", animations_amount);
+    
+    for (uint64_t i = 0; i < MAX_ANIMATIONS_AMOUNT; i++) {
+        if (animations_list[i] != NULL) {
+            destroy_animation(animations_list[i]);
+        }
+    }
+
+    if (animations_amount != 0) {
+        DEBUG_PRINT("leaked an animation\n");
+    }
+    
     animations_amount = 0;
 }
 

@@ -8,6 +8,7 @@
 
 #include "codeflow.h"
 #include "../glad/glad.h"
+#include "textures/textures.h"
 
 
 #define INVALID_FBO_INDEX (UINT32_MAX)
@@ -15,9 +16,6 @@
 #define INVALID_FBO_ATTACHMENT_VALUE (UINT32_MAX)
 
 #define CHECK_FBO(fbo_ptr) RETHROW_IF_ERROR(check_fbo(fbo_ptr))
-
-
-typedef err_t (*texture_param_setter_callback_t)();
 
 
 typedef enum color_fbo_attachment_type_e {

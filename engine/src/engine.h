@@ -19,4 +19,8 @@ int32_t get_window_height();
 int32_t get_window_drawable_width();
 int32_t get_window_drawable_height();
 
+extern uint32_t delta_time;
+extern float delta_frames;
+extern uint8_t keys[SDL_NUM_SCANCODES];
+
 #endif /* __ENGINE_H__ */

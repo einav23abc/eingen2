@@ -3,7 +3,7 @@
 #include "macros.h"
 #include "codeflow.h"
 #include "gl_macros.h"
-#include "../cameras/cameras.h"
+#include "cameras/cameras.h"
 
 // https://learnopengl.com/Advanced-OpenGL/Framebuffers
 
@@ -47,54 +47,26 @@ cleanup:
     return err;
 }
 
-static err_t gl_delete_texture(uint32_t gl_texture) {
-    err_t err = NO_ERROR;
-
-    DEBUG_CHECK_NO_GL_ERROR();
-    glDeleteTextures(1, &gl_texture);
-    CHECK_NO_GL_ERROR();
-
-cleanup:
-    return err;
-}
-
-static err_t gl_generate_texture_2d(uint32_t* out_gl_texture,
-                                    GLint internal_format, GLint format, GLenum type,
-                                    uint32_t width, uint32_t height,
-                                    GLenum attachment,
-                                    texture_param_setter_callback_t param_setter_callback) {
+static err_t generate_texture_2d_attachment(uint32_t* out_gl_texture,
+                                            GLint internal_format, GLint format, GLenum type,
+                                            uint32_t width, uint32_t height,
+                                            GLenum attachment,
+                                            texture_param_setter_callback_t param_setter_callback) {
     err_t err = NO_ERROR;
     uint32_t gl_texture = INVALID_FBO_ATTACHMENT_VALUE;
 
     CHECK(out_gl_texture != NULL);
     *out_gl_texture = INVALID_FBO_ATTACHMENT_VALUE;
     
-    CHECK_NO_GL_ERROR();
-
-    glGenTextures(1, &gl_texture);
-    DEBUG_CHECK_NO_GL_ERROR();
-    
-    glBindTexture(GL_TEXTURE_2D, gl_texture);
-    DEBUG_CHECK_NO_GL_ERROR();
-
-    glTexImage2D(GL_TEXTURE_2D, 0, internal_format, width, height, 0, format, type, NULL);
-    DEBUG_CHECK_NO_GL_ERROR();
-    
-    // default texture parameters
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    DEBUG_CHECK_NO_GL_ERROR();
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    DEBUG_CHECK_NO_GL_ERROR();
-
-    // user set texture parameters
-    if (param_setter_callback != NULL) {
-        RETHROW_IF_ERROR(param_setter_callback());
-    }
-    DEBUG_CHECK_NO_GL_ERROR();
+    RETHROW_IF_ERROR(gl_generate_texture_2d(
+        &gl_texture,
+        internal_format, format, type,
+        width, height, NULL,
+        param_setter_callback
+    ));
 
     // attach to current frame buffer object
     glFramebufferTexture2D(GL_FRAMEBUFFER, attachment, GL_TEXTURE_2D, gl_texture, 0);  
-    
     CHECK_NO_GL_ERROR();
 
     *out_gl_texture = gl_texture;
@@ -284,7 +256,7 @@ err_t create_fbo_ext_param( fbo_t** out_fbo,
 
     switch (color_attachment_type) {
     case TEXTURE_COLOR_FBO_ATTACHMENT:
-        RETHROW_IF_ERROR(gl_generate_texture_2d(
+        RETHROW_IF_ERROR(generate_texture_2d_attachment(
             &fbo->color_attchment.gl_texture,
             color_attachment_format, color_attachment_format, GL_UNSIGNED_BYTE,
             width, height,
@@ -313,7 +285,7 @@ err_t create_fbo_ext_param( fbo_t** out_fbo,
     // secondery attachment
     switch (secondery_attachment_type) {
     case DEPTH_STENCIL_TEXTURE_SECONDERY_FBO_ATTACHMENT:
-        RETHROW_IF_ERROR(gl_generate_texture_2d(
+        RETHROW_IF_ERROR(generate_texture_2d_attachment(
             &fbo->secondery_attachment.gl_texture,
             GL_DEPTH24_STENCIL8, GL_DEPTH_STENCIL, GL_UNSIGNED_INT_24_8,
             width, height,
@@ -322,7 +294,7 @@ err_t create_fbo_ext_param( fbo_t** out_fbo,
         ));
         break;
     case DEPTH_ONLY_TEXTURE_SECONDERY_FBO_ATTACHMENT:
-        RETHROW_IF_ERROR(gl_generate_texture_2d(
+        RETHROW_IF_ERROR(generate_texture_2d_attachment(
             &fbo->secondery_attachment.gl_texture,
             GL_DEPTH_COMPONENT, GL_DEPTH_COMPONENT, GL_UNSIGNED_INT,
             width, height,
@@ -331,7 +303,7 @@ err_t create_fbo_ext_param( fbo_t** out_fbo,
         ));
         break;
     case STENCIL_ONLY_TEXTURE_SECONDERY_FBO_ATTACHMENT:
-        RETHROW_IF_ERROR(gl_generate_texture_2d(
+        RETHROW_IF_ERROR(generate_texture_2d_attachment(
             &fbo->secondery_attachment.gl_texture,
             GL_STENCIL_INDEX, GL_STENCIL_INDEX, GL_UNSIGNED_INT,
             width, height,
@@ -449,31 +421,13 @@ cleanup:
     return err;
 }
 
-static err_t bind_texture_to_uniform(uint32_t gl_texture, int32_t uniform_location, uint8_t texture_num) {
-    err_t err = NO_ERROR;
-
-    DEBUG_CHECK_NO_GL_ERROR();
-    
-    glUniform1i(uniform_location, texture_num);
-    DEBUG_CHECK_NO_GL_ERROR();
-    
-    glActiveTexture(GL_TEXTURE0 + texture_num);
-    DEBUG_CHECK_NO_GL_ERROR();
-    
-    glBindTexture(GL_TEXTURE_2D, gl_texture);
-    DEBUG_CHECK_NO_GL_ERROR();
-
-cleanup:
-    return err;
-}
-
 err_t bind_fbo_color_texture(fbo_t* fbo, int32_t uniform_location, uint8_t texture_num) {
     err_t err = NO_ERROR;
 
     CHECK(fbo != NULL);
     CHECK(fbo->color_attachment_type == TEXTURE_COLOR_FBO_ATTACHMENT);
 
-    RETHROW_IF_ERROR(bind_texture_to_uniform(fbo->color_attchment.gl_texture, uniform_location, texture_num));
+    RETHROW_IF_ERROR(bind_gl_texture_to_uniform(fbo->color_attchment.gl_texture, uniform_location, texture_num));
 
 cleanup:
     return err;
@@ -489,7 +443,7 @@ err_t bind_fbo_depth_stencil_texture(fbo_t* fbo, int32_t uniform_location, uint8
         fbo->secondery_attachment_type == STENCIL_ONLY_TEXTURE_SECONDERY_FBO_ATTACHMENT
     );
 
-    RETHROW_IF_ERROR(bind_texture_to_uniform(fbo->secondery_attachment.gl_texture, uniform_location, texture_num));
+    RETHROW_IF_ERROR(bind_gl_texture_to_uniform(fbo->secondery_attachment.gl_texture, uniform_location, texture_num));
 
 cleanup:
     return err;

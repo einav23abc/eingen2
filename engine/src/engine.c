@@ -2,8 +2,18 @@
 
 #include "gl_macros.h"
 #include "shaders/shaders.h"
+#include "textures/textures.h"
+#include "meshes_and_animations/meshes_and_animations.h"
+#include "frame_buffer_objects/frame_buffer_objects.h"
+
 #include "default_shader/default_shader.h"
 #include "simple_draw_utils/simple_draw_utils.h"
+
+
+#ifndef TARGET_FRAME_RATE
+#define TARGET_FRAME_RATE (60)
+#endif
+#define TARGET_FRAME_DELAY (1000/TARGET_FRAME_RATE)
 
 __attribute__((weak)) err_t init();
 __attribute__((weak)) err_t update();
@@ -13,7 +23,14 @@ __attribute__((weak)) err_t clean();
 
 static SDL_Event event = {0};
 
-static uint8_t keys[SDL_NUM_SCANCODES] = {0}; // ticks since key pressed; 0 if released
+uint32_t frame_start_time = 0;
+uint32_t delta_time = 0;
+float delta_frames = 0;
+static uint32_t acum_frames_time = 0;
+static float acum_delta_frames = 0;
+static uint32_t acum_frames_amount = 0;
+
+uint8_t keys[SDL_NUM_SCANCODES] = {0}; // ticks since key pressed; 0 if released
 
 static uint8_t is_running = 0;
 
@@ -34,6 +51,13 @@ static err_t engine_clean() {
     if (clean != NULL) {
         RETHROW_IF_ERROR(clean());
     }
+
+    clean_cameras();
+    clean_shaders();
+    clean_fbos();
+    clean_textures();
+    clean_meshes();
+    clean_animations();
     
     SDL_GL_DeleteContext(context);
     DEBUG_PRINT("deleted context successfully\n");
@@ -150,12 +174,16 @@ static err_t engine_handle_event() {
         
         case SDL_KEYDOWN:
             scancode = event.key.keysym.scancode;
-            if (scancode < SDL_NUM_SCANCODES && keys[scancode] == 0) keys[scancode] = 1;
+            if (scancode < SDL_NUM_SCANCODES && scancode >= 0 && keys[scancode] == 0) {
+                keys[scancode] = 1;
+            }
             break;
 
         case SDL_KEYUP:
             scancode = event.key.keysym.scancode;
-            if (scancode < SDL_NUM_SCANCODES) keys[scancode] = 0;
+            if (scancode < SDL_NUM_SCANCODES && scancode >= 0) {
+                keys[scancode] = 0;
+            }
             break;
         
         case SDL_WINDOWEVENT:
@@ -188,7 +216,9 @@ static err_t engine_update() {
         if (keys[i]) {
             keys[i]++;
             // avoid integer overflow
-            if (keys[i] == 0) keys[i]--;
+            if (keys[i] == 0) {
+                keys[i]--;
+            }
         }
     }
 
@@ -274,12 +304,27 @@ int32_t main(int32_t argc, char** argv) {
 
     is_running = 1;
     while(is_running){
+        frame_start_time = SDL_GetTicks();
+
         while (SDL_PollEvent(&event)) {
             RETHROW_IF_ERROR(engine_handle_event());
         }
         
         RETHROW_IF_ERROR(engine_update());
         RETHROW_IF_ERROR(engine_render());
+
+        delta_time = SDL_GetTicks() - frame_start_time;
+        delta_frames = ((float)delta_time)/TARGET_FRAME_DELAY;
+
+        acum_frames_amount += 1;
+        acum_frames_time += delta_time;
+        acum_delta_frames += delta_frames;
+        if (acum_frames_time >= 1000) {
+            DEBUG_PRINT("Avrage fps in the last seccond:%d \t(%f)\n", 1000*acum_frames_amount/acum_frames_time, acum_delta_frames);
+            acum_frames_amount = 0;
+            acum_frames_time = 0;
+            acum_delta_frames = 0;
+        }
     }
     
     DEBUG_PRINT("engine_clean()\n");

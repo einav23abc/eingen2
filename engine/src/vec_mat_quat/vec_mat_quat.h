@@ -6,47 +6,47 @@
 #include <stdint.h>
 
 
-typedef struct {
+typedef struct vec2_s {
     float x;
     float y;
 } vec2_t;
 
-typedef struct {
+typedef struct vec3_s {
     float x;
     float y;
     float z;
 } vec3_t;
 
-typedef struct {
+typedef struct vec4_s {
     float x;
     float y;
     float z;
     float w;
 } vec4_t;
 
-typedef struct {
+typedef struct ivec2_s {
     int32_t x;
     int32_t y;
 } ivec2_t;
 
-typedef struct {
+typedef struct ivec3_s {
     int32_t x;
     int32_t y;
     int32_t z;
 } ivec3_t;
 
-typedef struct {
+typedef struct uvec2_s {
     uint32_t x;
     uint32_t y;
 } uvec2_t;
 
-typedef struct {
+typedef struct uvec3_s {
     uint32_t x;
     uint32_t y;
     uint32_t z;
 } uvec3_t;
 
-typedef struct {
+typedef struct uvec4_s {
     uint32_t x;
     uint32_t y;
     uint32_t z;
@@ -54,24 +54,24 @@ typedef struct {
 } uvec4_t;
 
 
-typedef struct {
+typedef struct quat_s {
     float w;
     float x;
     float y;
     float z;
 } quat_t;
 
-typedef struct {
+typedef struct quat_vec_vec_s {
     quat_t rot;
     vec3_t pos;
     vec3_t scale;
 } quat_vec_vec_t;
 
-typedef struct {
+typedef struct mat3_s {
     float mat[9];
 } mat3_t;
 
-typedef struct {
+typedef struct mat4_s {
     float mat[16];
 } mat4_t;
 

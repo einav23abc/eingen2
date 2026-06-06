@@ -22,7 +22,12 @@ DEBUG_DIR = $(BUILDS_DIR)/$(DEBUG_DIR_NAME)
 DEBUG_OBJS_DIR = $(DEBUG_DIR)/$(OBJS_DIR_NAME)
 DEBUG_TARGET = $(DEBUG_DIR)/$(TARGET_NAME)
 
-INCLUDE_DIRS := include src shaders
+INCLUDE_DIRS := 
+INCLUDE_DIRS += include
+INCLUDE_DIRS += include/SDL2
+INCLUDE_DIRS += include/SDL2_image
+INCLUDE_DIRS += src
+INCLUDE_DIRS += shaders
 
 SRCS :=
 SRCS += src/engine.c
@@ -31,6 +36,7 @@ SRCS += src/utils/utils.c
 SRCS += src/vec_mat_quat/vec_mat_quat.c
 SRCS += src/shaders/shaders.c
 SRCS += src/cameras/cameras.c
+SRCS += src/textures/textures.c
 SRCS += src/frame_buffer_objects/frame_buffer_objects.c
 SRCS += src/meshes_and_animations/meshes_and_animations.c
 SRCS += src/simple_draw_utils/simple_draw_utils.c
@@ -38,6 +44,7 @@ SRCS += src/simple_draw_utils/simple_draw_utils.c
 SHADERS :=
 SHADERS += default_shader
 SHADERS += simple_draw_utils/screen_quad_mesh_shader
+SHADERS += simple_draw_utils/colored_object_shader
 SHADER_SRCS := $(foreach shader_path,$(SHADERS),$(SHADERS_DIR)/$(shader_path)/$(notdir $(shader_path)).c)
 SRCS += $(SHADER_SRCS)
 
@@ -128,7 +135,7 @@ $(DEBUG_OBJS_DIR)/%.o: %.c | $(DEBUG_DIRS)
 
 shaders: $(SHADER_SRCS)
 
-$(SHADERS_DIR)/%.h $(SHADERS_DIR)/%.c: $(SHADERS_DIR)/%.frag $(SHADERS_DIR)/%.vert | $(DEBUG_DIRS)
+$(SHADERS_DIR)/%.h $(SHADERS_DIR)/%.c: $(SHADERS_DIR)/%.frag $(SHADERS_DIR)/%.vert
 	$(SHADER_TO_C) $(dir $<)
 
 

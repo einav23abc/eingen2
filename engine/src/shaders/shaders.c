@@ -23,7 +23,7 @@
 
 
 uint32_t shaders_amount = 0;
-uint32_t current_shader = INVALID_SHADER_INDEX;
+uint32_t current_shader_index = INVALID_SHADER_INDEX;
 shader_t* shaders_list[_MAX_SHADERS_AMOUNT_];
 const uint32_t MAX_SHADERS_AMOUNT = _MAX_SHADERS_AMOUNT_;
 
@@ -254,6 +254,7 @@ static err_t reset_shader(shader_t* shader) {
     shader->u_instanced_drawing_float_data_loc = INVALID_GL_UNIFORM_LOCATION;
     shader->u_instanced_drawing_uint_data_loc = INVALID_GL_UNIFORM_LOCATION;
     shader->uniform_locations = NULL;
+    shader->attribute_locations = NULL;
     
     shader->wvp_mat_camera_index = INVALID_CAMERA_INDEX;
 
@@ -315,7 +316,7 @@ static void clean_shader(shader_t* shader) {
 
         free(shader->attribute_locations);
         shader->attribute_locations = NULL;
-        
+
         free(shader->uniform_locations);
         shader->uniform_locations = NULL;
 
@@ -454,7 +455,9 @@ err_t update_shader_uniforms_by_camera(shader_t* shader, camera_t* camera) {
     CHECK_SHADER(shader);
     CHECK_CAMERA(camera);
 
-    CHECK(shader->u_camera_wvp_mat_loc != -1);
+    if (shader->u_camera_wvp_mat_loc == INVALID_GL_UNIFORM_LOCATION) {
+        goto cleanup;
+    }
 
     // TODO: err_t wrap glUniformMatrix4fv
     DEBUG_CHECK_NO_GL_ERROR();
@@ -507,12 +510,12 @@ err_t use_shader(shader_t* shader) {
 
     CHECK_SHADER(shader);
 
-    if (shader->shader_index == current_shader) {
+    if (shader->shader_index == current_shader_index) {
         goto cleanup;
     }
 
     RETHROW_IF_ERROR(gl_use_program(shader->gl_program));
-    current_shader = shader->shader_index;
+    current_shader_index = shader->shader_index;
     
     RETHROW_IF_ERROR(update_shader_uniforms_by_current_camera(shader));
 
@@ -526,10 +529,10 @@ err_t get_current_shader(shader_t** out_current_shader) {
     CHECK(out_current_shader != NULL);
     *out_current_shader = NULL;
     
-    CHECK(IS_SHADER_INDEX_VALID(current_shader));
-    CHECK_SHADER(shaders_list[current_shader]);
+    CHECK(IS_SHADER_INDEX_VALID(current_shader_index));
+    CHECK_SHADER(shaders_list[current_shader_index]);
 
-    *out_current_shader = shaders_list[current_shader];
+    *out_current_shader = shaders_list[current_shader_index];
 
 cleanup:
     return err;
@@ -553,7 +556,7 @@ err_t destroy_shader(shader_t* shader) {
     err_t err = NO_ERROR;
     
     CHECK_SHADER(shader);
-    CHECK(current_shader != shader->shader_index);
+    CHECK(current_shader_index != shader->shader_index);
     CHECK(shaders_amount > 0);
     
     shaders_list[shader->shader_index] = NULL;
@@ -567,6 +570,9 @@ cleanup:
 
 void clean_shaders() {
     DEBUG_PRINT("cleaning %u shaders\n", shaders_amount);
+    
+    current_shader_index = INVALID_SHADER_INDEX;
+    
     for (uint32_t i = 0; i < MAX_SHADERS_AMOUNT; i++) {
         if (shaders_list[i] != NULL) {
             destroy_shader(shaders_list[i]);

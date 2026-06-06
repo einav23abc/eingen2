@@ -22,14 +22,27 @@ LIBRARIES :=
 # LIBRARIES += SDL2main
 LIBRARIES += SDL2
 LIBRARIES += opengl32
-# LIBRARIES += SDL2_image
 # LIBRARIES += SDL2_mixer
-# LIBRARIES += libpng16-16
 # LIBRARIES += Ws2_32
+
+
+STATIC_LIBRARIES :=
+STATIC_LIBRARIES += ./libs/libSDL2_image.a
+
+DEBUG_STATIC_LIBRARIES := $(STATIC_LIBRARIES)
+DEBUG_STATIC_LIBRARIES += $(ENGINE_DEBUG_LIBRARY_LOCATION)/libengine.a
+
+RELEASE_STATIC_LIBRARIES := $(STATIC_LIBRARIES)
+RELEASE_STATIC_LIBRARIES += $(ENGINE_RELEASE_LIBRARY_LOCATION)/libengine.a
+
 
 INCLUDE_DIRS := include src shaders
 
-ENGINE_INCLUDE_DIRS := ../engine/include ../engine/src
+ENGINE_INCLUDE_DIRS :=
+ENGINE_INCLUDE_DIRS += ../engine/include
+ENGINE_INCLUDE_DIRS += ../engine/include/SDL2
+ENGINE_INCLUDE_DIRS += ../engine/include/SDL2_image
+ENGINE_INCLUDE_DIRS += ../engine/src
 
 BUILDS_DIR = $(BUILDS_DIR_NAME)
 
@@ -46,11 +59,13 @@ DEBUG_TARGET := $(DEBUG_EXPORT_DIR)/$(TARGET_NAME)
 
 SRCS := 
 SRCS += src/init.c
-# SRCS += src/update.c
+SRCS += src/update.c
 SRCS += src/render.c
 
 SHADERS :=
-SRCS += $(foreach shader_name,$(SHADERS),$(SHADERS_DIR)/$(shader_name)/$(shader_name).c)
+SHADERS += global_shader
+SHADER_SRCS := $(foreach shader_path,$(SHADERS),$(SHADERS_DIR)/$(shader_path)/$(notdir $(shader_path)).c)
+SRCS += $(SHADER_SRCS)
 
 OBJS := $(patsubst %.c,%.o,$(SRCS))
 
@@ -72,9 +87,8 @@ CC := $(CROSS)-gcc
 LD := $(CROSS)-ld
 
 
-# ensures the libengine.a is linked fully
-CC_RELEASE_ENGINE_LINK_FLAGS = -Wl,--whole-archive -L"$(ENGINE_RELEASE_LIBRARY_LOCATION)" -l engine -Wl,--no-whole-archive
-CC_DEBUG_ENGINE_LINK_FLAGS = -Wl,--whole-archive -L"$(ENGINE_DEBUG_LIBRARY_LOCATION)" -l engine -Wl,--no-whole-archive
+CC_RELEASE_ENGINE_LINK_FLAGS = -Wl,--whole-archive $(foreach lib, $(RELEASE_STATIC_LIBRARIES), -L $(dir $(lib)) -l $(patsubst lib%.a,%,$(notdir $(lib)))) -Wl,--no-whole-archive
+CC_DEBUG_ENGINE_LINK_FLAGS = -Wl,--whole-archive $(foreach lib, $(DEBUG_STATIC_LIBRARIES), -L $(dir $(lib)) -l $(patsubst lib%.a,%,$(notdir $(lib)))) -Wl,--no-whole-archive
 
 CC_LINK_FLAGS = $(foreach lib,$(LIBRARIES),-l $(lib)) -L $(LIBS_DIR)
 
@@ -104,7 +118,7 @@ SHADER_TO_C := ../engine/devops_tools/shader_to_c
 # Don't delete files after no longer needed
 .SECONDARY:
 
-.PHONY: clean all release debug release_dirs debug_dirs
+.PHONY: clean all release debug release_dirs debug_dirs shaders
 default: debug
 
 
@@ -127,8 +141,8 @@ $(DEBUG_DIRS):
 release: $(RELEASE_TARGET) | $(RELEASE_DIRS)
 	cp $(LIBS_DIR)/* $(RELEASE_EXPORT_DIR)
 
-$(RELEASE_TARGET): $(RELEASE_OBJS)
-	$(CC) $(CC_RELEASE_FLAGS) $(CC_RELEASE_LINK_FLAGS) $^ -o $@
+$(RELEASE_TARGET): $(RELEASE_OBJS) $(ENGINE_RELEASE_LIBRARY_LOCATION)/libengine.a
+	$(CC) $(CC_RELEASE_FLAGS) $(CC_RELEASE_LINK_FLAGS) $(filter %.o, $^) -o $@
 
 $(RELEASE_OBJS_DIR)/%.o: %.c | $(RELEASE_DIRS)
 	$(CC) $(CC_RELEASE_FLAGS) $< -c -o $@
@@ -138,8 +152,8 @@ $(RELEASE_OBJS_DIR)/%.o: %.c | $(RELEASE_DIRS)
 debug: $(DEBUG_TARGET) | $(DEBUG_DIRS)
 	cp $(LIBS_DIR)/* $(DEBUG_EXPORT_DIR)
 
-$(DEBUG_TARGET): $(DEBUG_OBJS)
-	$(CC) $(CC_DEBUG_FLAGS) $(CC_DEBUG_LINK_FLAGS) $^ -o $@
+$(DEBUG_TARGET): $(DEBUG_OBJS) $(ENGINE_DEBUG_LIBRARY_LOCATION)/libengine.a
+	$(CC) $(CC_DEBUG_FLAGS) $(CC_DEBUG_LINK_FLAGS) $(filter %.o, $^) -o $@
 
 $(DEBUG_OBJS_DIR)/%.o: %.c | $(DEBUG_DIRS)
 	$(CC) $(CC_DEBUG_FLAGS) $< -c -o $@
@@ -147,7 +161,9 @@ $(DEBUG_OBJS_DIR)/%.o: %.c | $(DEBUG_DIRS)
 
 # shaders
 
-$(SHADERS_DIR)/%.h $(SHADERS_DIR)/%.c: $(SHADERS_DIR)/%.frag $(SHADERS_DIR)/%.vert | $(DEBUG_DIRS)
+shaders: $(SHADER_SRCS)
+
+$(SHADERS_DIR)/%.h $(SHADERS_DIR)/%.c: $(SHADERS_DIR)/%.frag $(SHADERS_DIR)/%.vert
 	$(SHADER_TO_C) $(dir $<)
 
 

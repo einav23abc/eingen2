@@ -2,3 +2,7 @@
 	path = engine/externals/SDL2
 	url = git@github.com:libsdl-org/SDL.git
 	branch = release-2.32.x
+[submodule "engine/externals/SDL2_image"]
+	path = engine/externals/SDL2_image
+	url = git@github.com:libsdl-org/SDL_image.git
+	branch = release-2.8.x
