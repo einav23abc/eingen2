@@ -116,7 +116,7 @@ static err_t render_game_world(bool should_set_shaders) {
         RETHROW_IF_ERROR(use_shader(grass_shader));
         RETHROW_IF_ERROR(set_global_uniforms());
     }
-    RETHROW_IF_ERROR(draw_plain(0, 0, 0, 200, 200, 0, 0, 0));
+    RETHROW_IF_ERROR(draw_plain(0, 0, 0, 2000, 2000, 0, 0, 0));
 
 cleanup:
     return err;
