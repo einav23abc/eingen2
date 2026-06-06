@@ -4,7 +4,6 @@ in vec3 v_position;
 in vec2 v_texcoord;
 in vec3 v_normal;
 
-uniform sampler2D u_texture;
 uniform sampler2D u_sun_shadow_map_texture;
 
 uniform vec3 u_sun_vector;
@@ -57,11 +56,11 @@ void main(){
     float lighting = clamp(light * shadow, 0.0, 1.0) * 0.5 + 0.5;
     // float lighting = clamp(light, 0.0, 1.0) * 0.75 + 0.25;
 
-    float aerial_mixing = max(0.0,min(1.0, 1 - 0.001 * distance(v_position, u_camera_position)));
-    const vec3 aerial_color = vec3(0.2, 0.2, 0.3);
+    // float aerial_mixing = max(0.0,min(1.0, 1 - 0.001 * distance(v_position, u_camera_position)));
+    // const vec3 aerial_color = vec3(0.2, 0.2, 0.3);
 
-    vec3 color = texture2D(u_texture, v_texcoord).xyz * lighting;
-    color = (color*aerial_mixing)+(aerial_color*(1 - aerial_mixing));
+    vec3 color = (vec3(84.0, 106.0, 0.0) / 256.0) * lighting;
+    // color = (color * aerial_mixing) + (aerial_color * (1 - aerial_mixing));
 
     gl_FragColor = vec4(color, 1.0);
 }

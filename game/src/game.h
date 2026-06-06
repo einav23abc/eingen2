@@ -27,6 +27,9 @@ extern animation_t* man_anim_t_pose;
 extern animation_t* man_anim_run;
 
 extern mesh_t* cube_mesh;
+extern mesh_t* plain_mesh;
+
+extern shader_t* grass_shader;
 
 extern float sun_vector_x;
 extern float sun_vector_y;

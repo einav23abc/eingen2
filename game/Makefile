@@ -67,6 +67,7 @@ SRCS += src/render.c
 SHADERS :=
 SHADERS += global_shader
 SHADERS += sun_shadow_map_shader
+SHADERS += grass_shader
 SHADER_SRCS := $(foreach shader_path,$(SHADERS),$(SHADERS_DIR)/$(shader_path)/$(notdir $(shader_path)).c)
 SRCS += $(SHADER_SRCS)
 
