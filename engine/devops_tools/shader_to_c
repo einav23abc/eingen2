@@ -16,6 +16,10 @@ def assert_path_is_file(path: Path) -> None:
     assert path.exists(), f"File {path} doesn't exist"
     assert path.is_file(), f"Path {path} is not a file"
 
+def serialize_line(line: str) -> str:
+    line = line.rstrip("\r\n")
+    line = line.replace("\\", "\\\\")
+    return line
 
 def main():
     parser = argparse.ArgumentParser()
@@ -57,7 +61,7 @@ def main():
             c_source_file.write(f"const char {shader_name}_vertex_shader[] = \n")
             with vertex_shader_path.open() as vertex_shader_file:
                 for line in vertex_shader_file:
-                    line = line.rstrip("\r\n")
+                    line = serialize_line(line)
                     c_source_file.write(f"\"{line}\\n\"\n")
             c_source_file.write(f"\"\";\n")
             c_source_file.write(f"\n")
@@ -65,7 +69,7 @@ def main():
             c_source_file.write(f"const char {shader_name}_fragment_shader[] = \n")
             with fragment_shader_path.open() as fragment_shader_file:
                 for line in fragment_shader_file:
-                    line = line.rstrip("\r\n")
+                    line = serialize_line(line)
                     c_source_file.write(f"\"{line}\\n\"\n")
             c_source_file.write(f"\"\";\n")
 

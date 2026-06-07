@@ -128,8 +128,8 @@ static err_t game_render() {
     RETHROW_IF_ERROR(use_fbo(sun_shadow_map_fbo));
     glClear(GL_DEPTH_BUFFER_BIT);
     RETHROW_IF_ERROR(use_camera(sun_shadow_map_camera));
-    RETHROW_IF_ERROR(use_shader(sun_shadow_map_shader));
-    RETHROW_IF_ERROR(render_game_world(false));
+    // RETHROW_IF_ERROR(use_shader(sun_shadow_map_shader));
+    RETHROW_IF_ERROR(render_game_world(true));
 
 
     RETHROW_IF_ERROR(use_fbo(outport_fbo));
