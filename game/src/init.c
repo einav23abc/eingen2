@@ -361,7 +361,7 @@ err_t init() {
         grass_shader_vertex_shader,
         grass_shader_fragment_shader,
         "in_vertex_position\0in_vertex_texcoord\0in_vertex_normal", 3,
-        "u_position\0u_scale\0u_quat_rotation\0u_camera_position\0u_sun_vector\0u_sun_shadow_map_wvp_mat\0u_sun_shadow_map_texture", 7
+        "u_position\0u_scale\0u_quat_rotation\0u_camera_position\0u_sun_vector\0u_sun_shadow_map_wvp_mat\0u_sun_shadow_map_texture\0u_camera_direction", 8
     ));
 
     RETHROW_IF_ERROR(load_texture(&global_texture, "./game/textures/global_texture.png"));

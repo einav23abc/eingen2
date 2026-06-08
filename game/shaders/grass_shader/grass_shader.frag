@@ -12,6 +12,7 @@ uniform vec3 u_sun_vector;
 uniform mat4 u_sun_shadow_map_wvp_mat;
 
 uniform vec3 u_camera_position;
+uniform vec3 u_camera_direction;
 
 // for shadows
 const vec2 poisson_sampling_disk[16] = vec2[](
@@ -78,7 +79,7 @@ float layered_noise(vec2 p) {
     );
 }
 
-float freq8(float x) {
+float sc_pow8(float x) {
     float s = sin(x);
     float s2 = s*s;
     float s4 = s2*s2;
@@ -90,11 +91,15 @@ float freq8(float x) {
     return (s8 + c8);
 }
 
-float MAX_HEIGHT = 16.0;
+float MAX_HEIGHT = 8.0;
 float height_map(vec2 p) {
     // return noise(p / 1.57) * MAX_HEIGHT;
-    return noise(p / 3.0) * MAX_HEIGHT;
-    // return freq8(p.x / 3.0) * freq8(p.y / 3.8) * MAX_HEIGHT;
+    // return noise(p / 3.0) * MAX_HEIGHT;
+
+    // TODO: this height map is too repetative (sc_pow8)
+    p /= 3.0;
+    float n = noise((p + vec2(52.4, -12.3)) / 1.57);
+    return mix(sc_pow8(p.x) * sc_pow8(p.y), n, 0.35) * MAX_HEIGHT;
 }
 
 float round(float x) {
@@ -107,45 +112,28 @@ float calculate_depth(vec3 p) {
 }
 
 void main(){
-    vec3 normal = v_normal;
+    vec3 normal = -v_normal;
     vec3 position = v_position;
-
-    /*
-        this parallaxing is wrong since i am going upwards instead of downwards.
-        due to this, in a situation like so: 
-
-                              xxx   
-                       ___ xxx      
-                      / xxB         
-                     xxx   \        
-                  xxx       \       
-               xxx /         \___   
-        ____Axx___/              \__
-
-        where `x` is the line of stepping, and the `_/\_` indicates the height map if
-        disected from the side.
-
-        we have a unique issue that on the first iteration we already satisfy the condition
-        that the parallaxed depth is smaller then the parallaxed step's depth. which causes
-        us to exit the loop and thus we select point A as our position instead of point B.
-    */
 
     int PARALAX_ITERATIONS = 4;
 
-    vec3 view_dir = u_camera_position - position;
+    // for orthogonal projections, use the camera's direction.
+    vec3 view_dir = u_camera_direction;
+    // for perspective projections, use the camera's position.
+    // vec3 view_dir = position - u_camera_position;
     vec3 normalized_view_dir = normalize(view_dir);
     vec3 parallax_step = (-dot(normalized_view_dir, normal) * normalized_view_dir) * MAX_HEIGHT / float(PARALAX_ITERATIONS);
     
-    vec3 parallaxed_step_position = position;
+    vec3 parallaxed_step_position = position - parallax_step * float(PARALAX_ITERATIONS);
     float parallaxed_step_depth = calculate_depth(parallaxed_step_position);
-    vec3 parallaxed_position = parallaxed_step_position + height_map(parallaxed_step_position.xz) * normal;
+    vec3 parallaxed_position = vec3(parallaxed_step_position.x, position.y, parallaxed_step_position.z) + height_map(parallaxed_step_position.xz) * normal;
     float parallaxed_depth = calculate_depth(parallaxed_position);
 
     vec3 last_parallaxed_step_position = parallaxed_step_position;
     float last_parallaxed_step_depth = parallaxed_step_depth;
     vec3 last_parallaxed_position = parallaxed_position;
     float last_parallaxed_depth = parallaxed_depth;
-    for (int i = 0; i < PARALAX_ITERATIONS && parallaxed_step_depth <= parallaxed_depth; i++) {
+    for (int i = 0; i < PARALAX_ITERATIONS && parallaxed_step_depth < parallaxed_depth; i++) {
         last_parallaxed_step_position = parallaxed_step_position;
         last_parallaxed_step_depth = parallaxed_step_depth;
         last_parallaxed_position = parallaxed_position;
@@ -153,7 +141,7 @@ void main(){
         
         parallaxed_step_position = last_parallaxed_step_position + parallax_step;
         parallaxed_step_depth = calculate_depth(parallaxed_step_position);
-        parallaxed_position = parallaxed_step_position + height_map(parallaxed_step_position.xz) * normal;
+        parallaxed_position = vec3(parallaxed_step_position.x, position.y, parallaxed_step_position.z) + height_map(parallaxed_step_position.xz) * normal;
         parallaxed_depth = calculate_depth(parallaxed_position);
     }
 
@@ -195,11 +183,13 @@ void main(){
     float grass_patch = layered_noise(position.xz);
 
     float color_modifier = (round(grass_patch) * 0.3 + 0.7) * lighting;
+    // color_modifier *= min(1.0, (height_map(position.xz) / MAX_HEIGHT) * 0.5 + 0.75);
 
     vec3 color = (vec3(84.0, 106.0, 0.0) / 256.0) * color_modifier;
     // color = (color * aerial_mixing) + (aerial_color * (1 - aerial_mixing));
 
     // color = vec3(height_map(position.xz) / MAX_HEIGHT);
+    // color = vec3(position.y / MAX_HEIGHT);
     // color = vec3(((position.xz + 200.0) / 400.0), 0.0);
 
     gl_FragDepth = depth;

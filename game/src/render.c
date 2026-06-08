@@ -36,21 +36,17 @@ static err_t draw_plain(float x, float y, float z,
 
     RETHROW_IF_ERROR(get_current_shader(&current_shader));
 
-    glDisable(GL_CULL_FACE);
-
     // u_position
     glUniform3f(current_shader->uniform_locations[0], x, y, z);
     // u_scale
     glUniform3f(current_shader->uniform_locations[1], w, 1, d);
     // u_quat_rotation
-    quat_t quat_rotation = quat_from_axis_angles_yzx(-rx, -ry, -rz);
+    quat_t quat_rotation = quat_from_axis_angles_yzx(-rx, M_PI-ry, -rz);
     glUniform4f(current_shader->uniform_locations[2], quat_rotation.x, quat_rotation.y, quat_rotation.z, quat_rotation.w);
     
     RETHROW_IF_ERROR(draw_mesh(plain_mesh));
 
 cleanup:
-    glEnable(GL_CULL_FACE);
-
     return err;
 }
 
@@ -115,8 +111,12 @@ static err_t render_game_world(bool should_set_shaders) {
     if (should_set_shaders) {
         RETHROW_IF_ERROR(use_shader(grass_shader));
         RETHROW_IF_ERROR(set_global_uniforms());
+        float view_direction_x = cos(game_camera->ry + M_PI * 0.5) * cos(game_camera->rx);
+        float view_direction_y = sin(game_camera->rx);
+        float view_direction_z = sin(game_camera->ry + M_PI * 0.5) * cos(game_camera->rx);
+        glUniform3f(grass_shader->uniform_locations[7], view_direction_x, view_direction_y, view_direction_z);
     }
-    RETHROW_IF_ERROR(draw_plain(0, 0, 0, 2000, 2000, 0, 0, 0));
+    RETHROW_IF_ERROR(draw_plain(0, 0, 0, 2000, 2000, M_PI, 0, 0));
 
 cleanup:
     return err;
@@ -128,8 +128,8 @@ static err_t game_render() {
     RETHROW_IF_ERROR(use_fbo(sun_shadow_map_fbo));
     glClear(GL_DEPTH_BUFFER_BIT);
     RETHROW_IF_ERROR(use_camera(sun_shadow_map_camera));
-    // RETHROW_IF_ERROR(use_shader(sun_shadow_map_shader));
-    RETHROW_IF_ERROR(render_game_world(true));
+    RETHROW_IF_ERROR(use_shader(sun_shadow_map_shader));
+    RETHROW_IF_ERROR(render_game_world(false));
 
 
     RETHROW_IF_ERROR(use_fbo(outport_fbo));
