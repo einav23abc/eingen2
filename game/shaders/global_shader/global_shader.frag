@@ -12,6 +12,8 @@ uniform mat4 u_sun_shadow_map_wvp_mat;
 
 uniform vec3 u_camera_position;
 
+#define M_PI (3.141592653589793)
+
 const vec2 poisson_sampling_disk[16] = vec2[](
     vec2(-0.94201624, -0.39906216 ),
     vec2( 0.94558609, -0.76890725 ),
@@ -37,6 +39,14 @@ float random(vec3 seed, int i) {
     return fract(sin(dot_product) * 43758.5453);
 }
 
+// only works for [0..1]
+float smooth_round(float x) {
+    float is_smooth_part = floor(x + 0.625) * floor(-x + 1.625);
+    float one = floor(x + 0.375);
+    float smooth_part = sin(4.0 * x * M_PI) * 0.5 + 0.5;
+    return smooth_part * is_smooth_part + one;
+}
+
 void main(){
     float normal_dot_sun = dot(v_normal, -u_sun_vector);
     float light = normal_dot_sun;
@@ -54,14 +64,20 @@ void main(){
         }
     }
     
-    float lighting = clamp(light * shadow, 0.0, 1.0) * 0.5 + 0.5;
+    // float lighting = clamp(light * shadow, 0.0, 1.0) * 0.5 + 0.5;
     // float lighting = clamp(light, 0.0, 1.0) * 0.75 + 0.25;
 
-    float aerial_mixing = max(0.0,min(1.0, 1 - 0.001 * distance(v_position, u_camera_position)));
-    const vec3 aerial_color = vec3(0.2, 0.2, 0.3);
+    // float aerial_mixing = max(0.0,min(1.0, 1 - 0.001 * distance(v_position, u_camera_position)));
+    // const vec3 aerial_color = vec3(0.2, 0.2, 0.3);
 
-    vec3 color = texture2D(u_texture, v_texcoord).xyz * lighting;
-    color = (color*aerial_mixing)+(aerial_color*(1 - aerial_mixing));
+    // vec3 color = texture2D(u_texture, v_texcoord).xyz * lighting;
+    // color = (color*aerial_mixing)+(aerial_color*(1 - aerial_mixing));
+
+    float light_ = smooth_round(clamp(light * shadow, 0.0, 1.0) * 0.8 + 0.2);
+    vec3 color = (
+        (vec3(175.0, 158.0, 148.0) / 256.0) * light_ +
+        (vec3(144.0, 124.0, 117.0) / 256.0) * (1 - light_)
+    );
 
     gl_FragColor = vec4(color, 1.0);
 }

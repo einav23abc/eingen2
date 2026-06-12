@@ -71,19 +71,6 @@ float noise(vec2 x) {
 	vec2 u = f * f * (3.0 - 2.0 * f);
 	return mix(a, b, u.x) + (c - a) * u.y * (1.0 - u.x) + (d - b) * u.x * u.y;
 }
-// for grass patch
-float layered_noise(vec2 p) {
-    vec2 transform = vec2(
-        noise((p + vec2(536.26, 864.13)) / 2.0),
-        noise((p + vec2(-954.82, -163.37)) / 2.0)
-    ) * 5.0;
-    
-    return (
-        noise((((p + transform) + vec2(-178.29, 23.641))) / 53.0) * 0.7 +
-        noise(((p + transform) + vec2(451.12, -912.74)) / 27.0) * 0.2 +
-        noise(((p + transform) + vec2(-336.12, -125.74)) / 7.0) * 0.1
-    );
-}
 
 // Simplex 2D noise
 //
@@ -113,9 +100,21 @@ float snoise(vec2 v){
     return 130.0 * dot(m, g);
 }
 
-// float HEIGHT_MAP_FREQUENCY = 6.0;
-// float INVERSE_HEIGHT_MAP_FREQUENCY = 1/HEIGHT_MAP_FREQUENCY;
-float MAX_HEIGHT = 8.0;
+// for grass patch
+float layered_noise(vec2 p) {
+    float transform_angle = snoise((p + vec2(536.26, 864.13)) * 0.05) * M_PI;
+    float transform_distance_modifier = snoise((p + vec2(-954.82, -163.37)) * 0.05) * 0.5 + 0.5;
+    vec2 transform = rotation_vec(transform_angle) * transform_distance_modifier * 3.0;
+    p += transform;
+
+    return (
+        noise((p + vec2(-178.29, 23.641)) / 53.0) * 0.7 +
+        noise((p + vec2(451.12, -912.74)) / 27.0) * 0.2 +
+        noise((p + vec2(-336.12, -125.74)) / 7.0) * 0.1
+    );
+}
+
+float MAX_HEIGHT = 4.0;
 float height_map(vec2 p) {
     // return noise(p / 1.57) * MAX_HEIGHT;
     // return noise(p / 3.0) * MAX_HEIGHT;
@@ -125,32 +124,19 @@ float height_map(vec2 p) {
     vec2 transform = rotation_vec(transform_angle) * transform_distance;
     p += transform * 2.5;
 
-    // float n = noise((p + vec2(52.4, -12.3)) / 1.57);
     return (cos(p.x) * 0.5 + 0.5) * (cos(p.y) * 0.5 + 0.5) * MAX_HEIGHT;
-
-    // p *= 0.75;
-    // vec2 transform = vec2(
-    //     snoise((p / 16.0) + vec2(-13.2, 17.9)),
-    //     snoise((p / 16.0) + vec2(64.2, -197.1))
-    // ) * 2.0;
-    // p += transform;
-    // float h = (sin(p.x) * 0.5 + 0.5) * (sin(p.y) * 0.5 + 0.5);
-
-    // float transform_angle = snoise((p * INVERSE_HEIGHT_MAP_FREQUENCY * 0.25) + vec2(-13.2, 17.9)) * M_PI;
-    // float transform_distance = snoise((p * INVERSE_HEIGHT_MAP_FREQUENCY * 0.25) + vec2(64.2, -197.1)) * 0.25 + 0.75;
-    // vec2 transform = rotation_vec(transform_angle) * transform_distance;
-    // p += transform * 1.5;
-    // p *= INVERSE_HEIGHT_MAP_FREQUENCY;
-    // vec2 waves = sin(p * M_PI);
-    // float h = waves.x * waves.y;
-    // h = h * 0.5 + 0.5;
-    // h = h * 0.75 + 0.25;
-    // h *= snoise(p) * 0.5 + 0.5;
-    // return h * MAX_HEIGHT;
 }
 
 float round(float x) {
     return floor(x + 0.5);
+}
+
+// only works for [0..1]
+float smooth_round(float x) {
+    float is_smooth_part = floor(x + 0.625) * floor(-x + 1.625);
+    float one = floor(x + 0.375);
+    float smooth_part = sin(4.0 * x * M_PI) * 0.5 + 0.5;
+    return smooth_part * is_smooth_part + one;
 }
 
 float calculate_depth(vec3 p) {
@@ -222,7 +208,7 @@ void main(){
         }
     }
     
-    float lighting = clamp(light * shadow, 0.0, 1.0) * 0.5 + 0.5;
+    // float lighting = clamp(light * shadow, 0.0, 1.0) * 0.5 + 0.5;
     // float lighting = clamp(light, 0.0, 1.0) * 0.75 + 0.25;
 
     // float aerial_mixing = max(0.0,min(1.0, 1 - 0.001 * distance(position, u_camera_position)));
@@ -230,10 +216,24 @@ void main(){
 
     float grass_patch = layered_noise(position.xz);
 
-    float color_modifier = (round(grass_patch) * 0.3 + 0.7) * lighting;
+    // float color_modifier = (round(grass_patch) * 0.3 + 0.7) * lighting;
     // color_modifier *= min(1.0, (height_map(position.xz) / MAX_HEIGHT) * 0.5 + 0.75);
 
-    vec3 color = (vec3(84.0, 106.0, 0.0) / 256.0) * color_modifier;
+    float grass_patch_ = round(grass_patch);
+    float light_ = smooth_round(clamp(light * shadow, 0.0, 1.0));
+    vec3 color = (
+        (
+            (vec3(114.0, 114.0, 52.0) / 256.0) * light_ +
+            (vec3(89.0, 92.0, 85.0) / 256.0) * (1 - light_)
+        ) * grass_patch_ +
+        (
+            (vec3(103.0, 95.0, 48.0) / 256.0) * light_ +
+            (vec3(75.0, 78.0, 79.0) / 256.0) * (1 - light_)
+        ) * (1 - grass_patch_)
+    );
+
+    // vec3 color = (vec3(84.0, 106.0, 0.0) / 256.0) * color_modifier;
+    // color = vec3(grass_patch) * lighting;
     // color = (color * aerial_mixing) + (aerial_color * (1 - aerial_mixing));
 
     // color = vec3(height_map(position.xz) / MAX_HEIGHT);
