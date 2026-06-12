@@ -150,7 +150,8 @@ void main(){
     vec3 b = parallaxed_position - parallaxed_step_position;
     float c = sqrt(dot(parallax_step, parallax_step)) * sqrt(dot(a, a));
     float x = c / (c + sqrt(dot(b, b)));
-    vec3 final_parallaxed_position = last_parallaxed_position + x * parallax_step;
+    vec3 final_parallaxed_step_position = last_parallaxed_position + x * parallax_step;
+    vec3 final_parallaxed_position = vec3(final_parallaxed_step_position.x, position.y, final_parallaxed_step_position.z) + height_map(final_parallaxed_step_position.xz) * normal;
     float final_parallaxed_depth = calculate_depth(final_parallaxed_position);
 
     position = final_parallaxed_position;
