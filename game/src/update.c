@@ -26,10 +26,18 @@ void game_camera_update() {
         game_camera->ry += 0.05 * delta_frames;
     }
 
-    // follow the player
-    game_camera->x = player_x      - 60*cos(game_camera->ry+M_PI*0.5)*cos(game_camera->rx);
-    game_camera->y = player_y + 40 - 60*sin(game_camera->rx);
-    game_camera->z = player_z      - 60*sin(game_camera->ry+M_PI*0.5)*cos(game_camera->rx);
+    if (keys[SDL_SCANCODE_A]) {
+        game_camera->x -= 1 * delta_frames;
+    }
+    if (keys[SDL_SCANCODE_D]) {
+        game_camera->x += 1 * delta_frames;
+    }
+    if (keys[SDL_SCANCODE_S]) {
+        game_camera->y -= 1 * delta_frames;
+    }
+    if (keys[SDL_SCANCODE_W]) {
+        game_camera->y += 1 * delta_frames;
+    }
 
     // perspective <-> orthographic togle
     if (keys[SDL_SCANCODE_P] == 1) {
@@ -43,94 +51,8 @@ void game_camera_update() {
     }
 }
 
-void game_player_update() {
-    player_vx = 0;
-    player_vz = 0;
-
-    // move left right (set velocity)
-    if (keys[SDL_SCANCODE_A]) {
-        player_vx += 2*cos(game_camera->ry+M_PI);
-        player_vz += 2*sin(game_camera->ry+M_PI);
-    }
-    if (keys[SDL_SCANCODE_D]) {
-        player_vx += 2*cos(game_camera->ry);
-        player_vz += 2*sin(game_camera->ry);
-    }
-
-    // move in out (set velocity)
-    if (keys[SDL_SCANCODE_S]) {
-        player_vx += 2*cos(game_camera->ry+M_PI*1.5);
-        player_vz += 2*sin(game_camera->ry+M_PI*1.5);
-    }
-    if (keys[SDL_SCANCODE_W]) {
-        player_vx += 2*cos(game_camera->ry+M_PI*0.5);
-        player_vz += 2*sin(game_camera->ry+M_PI*0.5);
-    }
-
-    player_x += player_vx * delta_frames;
-    // player_y += player_vy * delta_frames;
-    player_z += player_vz * delta_frames;
-
-    // update ry appropriate to move direction
-    if (player_vz != 0 || player_vx != 0) {
-        while (player_ry >= M_PI*2) {player_ry -= M_PI*2;}
-        while (player_ry < 0) {player_ry += M_PI*2;}
-
-        float  goal_ry = atan(player_vz/player_vx)+M_PI*1.5;
-        if (player_vx < 0) {
-            goal_ry += M_PI;
-        }
-
-        while (goal_ry >= M_PI*2) {goal_ry -= M_PI*2;}
-        while (goal_ry < 0) {goal_ry += M_PI*2;}
-        
-        // +-2PI for smallest diffrence
-        if (fabs(player_ry-(goal_ry - M_PI*2)) < fabs(player_ry - goal_ry)) {
-            goal_ry -= M_PI*2;
-        }
-        if (fabs(player_ry-(goal_ry + M_PI*2)) < fabs(player_ry - goal_ry)) {
-            goal_ry += M_PI*2;
-        }
-
-        float delta_ry = 0.15 * delta_frames;
-        player_ry = player_ry*(1.0 - delta_ry) + goal_ry * delta_ry;
-    }
-
-    if (player_current_animation != man_anim_run && (player_vx || player_vz)) {
-        player_last_animation = player_current_animation;
-        player_current_animation = man_anim_run;
-        player_last_animation_frame = player_current_animation_frame;
-        player_current_animation_frame = 0;
-        player_animation_transition_frame = 0;
-    }
-    if (player_current_animation != man_anim_t_pose && (player_vx == 0 && player_vz == 0)) {
-        player_last_animation = player_current_animation;
-        player_current_animation = man_anim_t_pose;
-        player_last_animation_frame = player_current_animation_frame;
-        player_current_animation_frame = 0;
-        player_animation_transition_frame = 0;
-    }
-
-    // player_last_animation_frame += delta_frames;
-    player_current_animation_frame += delta_frames;
-    player_animation_transition_frame += delta_frames;
-}
-
-void sun_shadow_map_update() {
-    sun_shadow_map_camera->x = player_x;
-    sun_shadow_map_camera->y = player_y;
-    sun_shadow_map_camera->z = player_z;
-
-    sun_shadow_map_camera->ry = 0.002 * total_frames;
-    sun_vector_x = cos(sun_shadow_map_camera->ry + M_PI * 0.5) * cos(sun_shadow_map_camera->rx);
-    sun_vector_y = sin(sun_shadow_map_camera->rx);
-    sun_vector_z = sin(sun_shadow_map_camera->ry + M_PI * 0.5) * cos(sun_shadow_map_camera->rx);
-}
-
 err_t update() {
     game_camera_update();
-    game_player_update();
-    sun_shadow_map_update();
 
     return NO_ERROR;
 }

@@ -22,29 +22,6 @@ extern camera_t* game_camera;
 extern shader_t* global_shader;
 extern texture_t* global_texture;
 
-extern mesh_t* man_mesh;
-extern animation_t* man_anim_t_pose;
-extern animation_t* man_anim_run;
-
 extern mesh_t* cube_mesh;
-
-extern float sun_vector_x;
-extern float sun_vector_y;
-extern float sun_vector_z;
-extern camera_t* sun_shadow_map_camera;
-extern fbo_t* sun_shadow_map_fbo;
-extern shader_t* sun_shadow_map_shader;
-
-extern float player_vx;
-extern float player_vz;
-extern float player_x;
-extern float player_y;
-extern float player_z;
-extern float player_ry;
-extern animation_t* player_current_animation;
-extern animation_t* player_last_animation;
-extern float player_last_animation_frame;
-extern float player_current_animation_frame;
-extern float player_animation_transition_frame;
 
 #endif // __GAME_H__
