@@ -128,8 +128,8 @@ void sun_shadow_map_update() {
 }
 
 err_t update() {
-    game_camera_update();
     game_player_update();
+    game_camera_update();
     sun_shadow_map_update();
 
     return NO_ERROR;

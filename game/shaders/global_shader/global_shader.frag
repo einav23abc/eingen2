@@ -39,12 +39,12 @@ float random(vec3 seed, int i) {
     return fract(sin(dot_product) * 43758.5453);
 }
 
-// only works for [0..1]
 float smooth_round(float x) {
-    float is_smooth_part = floor(x + 0.625) * floor(-x + 1.625);
-    float one = floor(x + 0.375);
+    float fract_x = fract(x);
+    float is_smooth_part = floor(fract_x + 0.625) * floor(1.625 - fract_x);
+    float steps = floor(x + 0.375);
     float smooth_part = sin(4.0 * x * M_PI) * 0.5 + 0.5;
-    return smooth_part * is_smooth_part + one;
+    return smooth_part * is_smooth_part + steps;
 }
 
 void main(){

@@ -44,7 +44,7 @@ static err_t initialize_sun_shadow_map() {
     RETHROW_IF_ERROR(create_camera(
         &sun_shadow_map_camera,
         0, 0, 0,
-        M_PI*1.35, M_PI*0.3, 0,
+        M_PI*1.25, M_PI*0.3, 0,
         1080, 1080, 1600,
         -32000, 32000,
         0, 45,

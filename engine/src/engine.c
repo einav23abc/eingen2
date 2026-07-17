@@ -108,13 +108,12 @@ static err_t backend_init() {
     // make context current (should be current anyway)
     CHECK(SDL_GL_MakeCurrent(window, context) == 0);
 
-    // // use VSYNC
-    // if (SDL_GL_SetSwapInterval(1) != 0) {
-    //     DEBUG_PRINT("failed to enable Vsync\n");
-    // }
-
     // retrieve GL functions
     CHECK(gladLoadGLLoader(SDL_GL_GetProcAddress) != 0);
+    
+    // use VSYNC
+    CHECK(SDL_GL_SetSwapInterval(1) == 0);
+    CHECK_NO_GL_ERROR();
     
     // Check OpenGL properties
     DEBUG_PRINT("OpenGL properties:\n");
@@ -272,6 +271,7 @@ static err_t engine_render() {
 
     set_no_current_camera();
 
+    // glFinish();
     // show drawn image - swap the buffers
     SDL_GL_SwapWindow(window);
     // wait until the buffers have been swaped
@@ -322,7 +322,7 @@ int32_t main(int32_t argc, char** argv) {
         acum_frames_time += delta_time;
         acum_delta_frames += delta_frames;
         if (acum_frames_time >= 1000) {
-            DEBUG_PRINT("Avrage fps in the last seccond:%d \t(%f)\n", 1000*acum_frames_amount/acum_frames_time, acum_delta_frames);
+            DEBUG_PRINT("Avrage fps in the last seccond:%f \t(%f)\n", (((float)acum_frames_amount) * 1000) / ((float)acum_frames_time), acum_delta_frames);
             acum_frames_amount = 0;
             acum_frames_time = 0;
             acum_delta_frames = 0;
